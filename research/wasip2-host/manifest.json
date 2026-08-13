@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "componentVersion": "0.1.0",
+  "witPackage": "pointerbyte:goforge-poc@0.1.0",
+  "component": {
+    "path": "../../../forge-go-private/research/tinygo-wasip2/artifacts/goforge-poc.component.wasm",
+    "sha256": "faae839462c6c80dee2f5062289ea0a7c225170a52f1cbdc30a14c571560db55"
+  },
+  "hostGlue": {
+    "path": "./generated/goforge-poc.js",
+    "sha256": "e8577750a13b2f0eec2a2ac8f3f170cacf82e36dfe5c396fb18d4ff4dc0b36e7"
+  },
+  "coreModules": {
+    "goforge-poc.core.wasm": "5626d51f0199bdc8fe08c750a3b2c33f809759f6e3d3969e6bf4c16238bf9584",
+    "goforge-poc.core2.wasm": "047a07a4d7a9e18b0e4abfc69d4b9d68c74fef66c3eb1bbdfe0d45457f9234bb",
+    "goforge-poc.core3.wasm": "20ada2cf2bc4e7289ac10cf12ca4f0949983a8c8774bb666634eb45289259d25",
+    "goforge-poc.core4.wasm": "c31cc6ffd33735cbd42510e5afdd4cd5adf9b8591bd9c2af517674101268c9ea"
+  }
+}

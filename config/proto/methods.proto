@@ -1,0 +1,29 @@
+// Copyright 2026 PointerByte Contributors
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package denoforge.v1;
+
+// Methods is a small, generic service used by the examples and tests. Real
+// applications register their own protos with the same GrpcServer/GrpcClient.
+service Methods {
+  // Echo returns the request message unchanged.
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  // Health reports server liveness.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}

@@ -1,0 +1,103 @@
+{
+  "name": "@pointerbyte/denoforge",
+  "version": "0.0.13",
+  "description": "Deno port of GoForge: modular crypto, logging, security, jobs/workers and HTTP tooling.",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./mod.ts",
+    "./encrypt": "./encrypt/mod.ts",
+    "./encrypt/aws-kms": "./encrypt/aws-kms/mod.ts",
+    "./encrypt/azure-key-vault": "./encrypt/azure-key-vault/mod.ts",
+    "./encrypt/gcp-kms": "./encrypt/gcp-kms/mod.ts",
+    "./logger": "./logger/mod.ts",
+    "./security": "./security/mod.ts",
+    "./tools": "./tools/mod.ts",
+    "./config": "./config/mod.ts",
+    "./config/http": "./config/http/mod.ts",
+    "./config/grpc": "./config/grpc/mod.ts",
+    "./qdeno": "./cmd/qdeno/main.ts",
+    "./wasm": "./wasm/mod.ts"
+  },
+  "publish": {
+    "exclude": [
+      ".github/",
+      "benchmarks/",
+      "cmd/deno-openssl/",
+      "cmd/example/",
+      "coverage/",
+      "examples/",
+      "openspec/",
+      "research/",
+      "**/testdata/",
+      "**/*_test.ts",
+      "tools/API_INVENTORY.md",
+      "tools/api_inventory.ts",
+      "tools/check_api_inventory.ts",
+      "tools/check_config_references.ts",
+      "tools/check_coverage.ts",
+      "tools/check_dependency_isolation.ts",
+      "tools/check_docs.ts",
+      "tools/compatibility_matrix.ts",
+      "tools/wit_contract.ts",
+      "wasm/test_support.ts",
+      "push.txt"
+    ]
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/encoding": "jsr:@std/encoding@^1.0.11",
+    "@std/http": "jsr:@std/http@^1.1.2",
+    "@noble/hashes": "jsr:@noble/hashes@^1.8.0",
+    "@aws-sdk/client-kms": "npm:@aws-sdk/client-kms@^3.1100.0",
+    "@azure/keyvault-keys": "npm:@azure/keyvault-keys@^4.10.2",
+    "@grpc/grpc-js": "npm:@grpc/grpc-js@^1.14.4",
+    "@grpc/proto-loader": "npm:@grpc/proto-loader@^0.8.1",
+    "@google-cloud/kms": "npm:@google-cloud/kms@^5.7.0",
+    "@peculiar/x509": "npm:@peculiar/x509@^1.14.3",
+    "protobufjs": "npm:protobufjs@7.6.5"
+  },
+  "tasks": {
+    "check": "deno check mod.ts encrypt/aws-kms/mod.ts encrypt/azure-key-vault/mod.ts encrypt/gcp-kms/mod.ts config/http/mod.ts config/grpc/mod.ts wasm/mod.ts tools/check_config_references.ts tools/check_dependency_isolation.ts tools/check_coverage.ts tools/check_docs.ts tools/api_inventory.ts tools/check_api_inventory.ts tools/compatibility_matrix.ts tools/wit_contract.ts benchmarks/*.ts examples/*.ts cmd/qdeno/main.ts cmd/deno-openssl/main.ts cmd/example/main.ts",
+    "check:config": "deno run --allow-read=. tools/check_config_references.ts",
+    "check:deps": "deno run --allow-run=deno tools/check_dependency_isolation.ts",
+    "inventory": "deno run -A tools/api_inventory.ts --generated-at 2026-08-02T00:00:00Z --json openspec/changes/tinygo-wasip2-goforge-integration/research/evidence/deno-api-inventory.json --markdown openspec/changes/tinygo-wasip2-goforge-integration/research/evidence/deno-api-inventory.md",
+    "inventory:check": "deno run -A tools/check_api_inventory.ts",
+    "matrix": "deno run -A tools/compatibility_matrix.ts",
+    "contract": "deno run -A tools/wit_contract.ts",
+    "contract:check": "deno run -A tools/wit_contract.ts --check",
+    "matrix:check": "deno run -A tools/compatibility_matrix.ts --check",
+    "doc:lint": "deno run --allow-read=deno.json --allow-run=deno tools/check_docs.ts",
+    "test": "deno test -A",
+    "cov": "rm -rf coverage && deno test -A --coverage=coverage && deno coverage coverage",
+    "cov:check": "deno run -A tools/check_coverage.ts",
+    "cov:html": "deno coverage coverage --html",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "lint": "deno lint",
+    "bench": "deno bench -A benchmarks/",
+    "bench:smoke": "deno bench -A --filter=encrypt/local: benchmarks/",
+    "example:encrypt": "deno run examples/encrypt.ts",
+    "example:jwt": "deno run examples/jwt.ts",
+    "example:logger": "LOGGER_SENSIBLEKEYS=password,authorization,token deno run --allow-env=LOGGER_SENSIBLEKEYS --allow-write examples/logger.ts",
+    "example:tools": "deno run examples/tools.ts",
+    "example:server": "deno run --allow-net examples/server.ts",
+    "example:grpc": "deno run -A examples/grpc.ts",
+    "example": "deno run -A cmd/example/main.ts",
+    "qdeno": "deno run -A cmd/qdeno/main.ts",
+    "deno-openssl": "deno run -A cmd/deno-openssl/main.ts",
+    "sync:goforge-component": "deno run -A scripts/sync-goforge-component.ts"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": [
+      "deno.window"
+    ]
+  },
+  "fmt": {
+    "lineWidth": 100,
+    "exclude": [
+      "openspec/changes/tinygo-wasip2-goforge-integration/research/evidence",
+      "wasm/testdata"
+    ]
+  }
+}
