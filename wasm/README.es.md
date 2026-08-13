@@ -1,15 +1,15 @@
-# Runtime de componentes GoForge
+# Runtime de componentes forge-go
 
 La entrada pública `@pointerbyte/denoforge/wasm` es el host de Deno con cierre seguro para la lógica
-portable de GoForge. Importarla o construirla no realiza E/S. La primera llamada verifica el bundle
+portable de forge-go. Importarla o construirla no realiza E/S. La primera llamada verifica el bundle
 inmutable del release antes de entregar bytes a la fábrica. Cada instancia nueva también debe
-devolver el manifiesto portable canónico de GoForge antes de poder despachar peticiones.
+devolver el manifiesto portable canónico de forge-go antes de poder despachar peticiones.
 
 Este directorio es código de producción y nunca importa una implementación de investigación.
 
 ## ABI v1 canónica
 
-GoForge es la fuente de verdad del contrato. Las peticiones usan `abi`, `id`, `operation`,
+forge-go es la fuente de verdad del contrato. Las peticiones usan `abi`, `id`, `operation`,
 `metadata` opcional y un `payload` JSON crudo específico de la operación:
 
 ```json
@@ -51,7 +51,7 @@ Las respuestas usan `abi`, `id` y `ok`, seguidos exactamente por un `result` o u
 }
 ```
 
-No existe un wrapper genérico `$type` para bytes. Los campos definidos por GoForge—`data`, `key`,
+No existe un wrapper genérico `$type` para bytes. Los campos definidos por forge-go—`data`, `key`,
 `nonce`, `aad`, `plaintext`, `ciphertext`, `digest` y `mac`—son strings Base64 RFC 4648 con alfabeto
 estándar y padding obligatorio. Usa explícitamente `encodeAbiBase64` y `decodeAbiBase64`. Se
 rechazan bytes crudos, Base64 sin padding o URL-safe, códigos en mayúsculas, campos desconocidos,
@@ -69,7 +69,7 @@ envelopes byte a byte equivalentes y paridad de respuestas para las ocho operaci
 
 ## Dos manifiestos intencionalmente distintos
 
-`goforge.manifest.v1` lo exporta GoForge y describe ABI, límites, capacidades, operaciones y
+`goforge.manifest.v1` lo exporta forge-go y describe ABI, límites, capacidades, operaciones y
 errores. `goforge.bundle-manifest.v1` contiene solo metadatos del release para verificar los digests
 del componente, glue y módulos core. El runtime verifica ambos y rechaza cualquier desacuerdo.
 
@@ -144,7 +144,7 @@ await runtime.close();
 
 Cada instancia ofrece `manifest()` y `dispatch(requestJson, executionState)`. El estado se mapea
 directamente a `clockChecked`, `nowUnixMilliseconds`, `cancellationChecked`, `cancellationToken` y
-`cancellationRequested` de GoForge. Así los controles quedan fuera del payload de negocio, pero son
+`cancellationRequested` de forge-go. Así los controles quedan fuera del payload de negocio, pero son
 explícitos y fallan de forma cerrada.
 
 ## La factoría de producción y su frontera de capacidades
@@ -171,7 +171,7 @@ const runtime = new GoforgeWasmRuntime({
 });
 ```
 
-Las importaciones WASI provienen de `createDeniedWasiImports()`. El núcleo portable de GoForge no
+Las importaciones WASI provienen de `createDeniedWasiImports()`. El núcleo portable de forge-go no
 hace E/S, por lo que el host proporciona las dieciocho interfaces que el componente declara en su
 forma **denegada**: argumentos y entorno vacíos, flujos estándar cerrados, sin terminal asociada y
 cada punto de entrada del sistema de archivos devuelve `not-permitted`. Solo dos capacidades son
@@ -218,7 +218,7 @@ Crypto y las primitivas de cadenas de Deno. Existe porque el componente cuesta 2
 llamada que el código nativo con el mismo envelope, así que las rutas calientes necesitan otra
 salida.
 
-Es el único lugar de DenoForge que reimplementa reglas portables, y solo se permite porque la
+Es el único lugar de forge-deno que reimplementa reglas portables, y solo se permite porque la
 equivalencia se verifica por máquina en vez de afirmarse:
 
 ```ts
@@ -232,7 +232,7 @@ await runtime.invoke("crypto.sha256", { data }, {
 ```
 
 `createNativeGoforgeAdapter` devuelve `parityQualified: false`, y el registro se niega a enrutar a
-eso. Solo `qualifyNativeAdapter` — que reproduce todos los vectores de GoForge y los compara byte a
+eso. Solo `qualifyNativeAdapter` — que reproduce todos los vectores de forge-go y los compara byte a
 byte, y lanza un error si alguna operación no tiene vector que la cubra — puede producir un
 adaptador calificado. Una implementación desviada, por tanto, no puede registrarse.
 

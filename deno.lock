@@ -20,6 +20,7 @@
     "jsr:@std/streams@^1.1.1": "1.1.1",
     "npm:@aws-sdk/client-kms@^3.1100.0": "3.1100.0",
     "npm:@azure/keyvault-keys@^4.10.2": "4.10.2",
+    "npm:@bytecodealliance/preview2-shim@0.19.0": "0.19.0",
     "npm:@fission-ai/openspec@1.5.0": "1.5.0",
     "npm:@google-cloud/kms@^5.7.0": "5.7.0",
     "npm:@grpc/grpc-js@^1.14.4": "1.14.4",
@@ -367,6 +368,9 @@
         "@typespec/ts-http-runtime",
         "tslib@2.8.1"
       ]
+    },
+    "@bytecodealliance/preview2-shim@0.19.0": {
+      "integrity": "sha512-OSUlcM62fXLuzYP0DjBn/SwjKMZ/y/2PMXZ8v5cRiiFcroauntlPRl/oCnx0xYjYiqdYvE0PY50VCNutll0xOw=="
     },
     "@fission-ai/openspec@1.5.0": {
       "integrity": "sha512-SLZkyF51gFYkISufZKaka0X04z4y/WCjPOcCB+EC7tALd0TC+7V76BOIzWOSIOhdhBWwh5EMIBhrgLnugIh1DA==",
@@ -1501,6 +1505,7 @@
       "jsr:@std/http@^1.1.2",
       "npm:@aws-sdk/client-kms@^3.1100.0",
       "npm:@azure/keyvault-keys@^4.10.2",
+      "npm:@bytecodealliance/preview2-shim@0.19.0",
       "npm:@google-cloud/kms@^5.7.0",
       "npm:@grpc/grpc-js@^1.14.4",
       "npm:@grpc/proto-loader@~0.8.1",

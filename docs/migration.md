@@ -1,6 +1,6 @@
 # Migration
 
-Moving from GoForge (Go) to DenoForge (Deno), and choosing how much of GoForge to keep.
+Moving from forge-go (Go) to forge-deno (Deno), and choosing how much of forge-go to keep.
 
 ## Decide first: which path do you actually need?
 
@@ -34,7 +34,7 @@ parity is proven only where shared vectors exist.
 
 ## Step 2: keep the naming conventions in mind
 
-Go's package-qualified names collapse when flattened into JavaScript, so DenoForge namespaces by
+Go's package-qualified names collapse when flattened into JavaScript, so forge-deno namespaces by
 module (`encrypt`, `logger`, `security`, `wasm`) — names that repeat across modules, like `Service`,
 `Middleware` and `Handler`, never collide. Import from the specific entry point rather than the root
 when you want that clarity:
@@ -133,7 +133,7 @@ deno task test && deno task cov:check
 deno task contract:check && deno task inventory:check && deno task matrix:check
 ```
 
-If `contract:check` fails, a GoForge contract change has landed — regenerate with
+If `contract:check` fails, a forge-go contract change has landed — regenerate with
 `deno task contract` and let `generated_contract_test.ts` name any surface that also needs updating.
 
 ## Related

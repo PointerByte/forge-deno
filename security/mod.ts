@@ -32,11 +32,16 @@ export { jwtMiddleware, type JWTMiddlewareOptions } from "./middlewares/jwt.ts";
 export { cookieMiddleware } from "./middlewares/cookies.ts";
 export {
   grpcClaims,
+  /** Per-call context read and enriched by gRPC security interceptors. */
   type GrpcContext,
   grpcJwtInterceptor,
   type GrpcJWTOptions,
+  /** Structural metadata collection used to read bearer credentials. */
   type GrpcMetadata,
+  /** String or binary value accepted in gRPC metadata. */
   type GrpcMetadataValue,
+  /** Dependency-free view of the underlying unary server call. */
   type GrpcServerCall,
+  /** Composable server-interceptor contract implemented by gRPC JWT auth. */
   type ServerInterceptor,
 } from "./middlewares/grpc_jwt.ts";

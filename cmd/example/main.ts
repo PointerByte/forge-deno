@@ -28,7 +28,7 @@ const jwt = createService({ algorithm: "HS256", hmacSecret: "super-secret-key" }
 const http = newHttpServer({ port: 8080 })
   .use(httpLogger(log))
   .use(securityHeaders());
-http.get("/api/hello", () => Response.json({ message: "hello from DenoForge" }));
+http.get("/api/hello", () => Response.json({ message: "hello from forge-deno" }));
 http.group("/api", jwtMiddleware(jwt)).get(
   "/me",
   (req) => Response.json({ claims: getClaims(req) }),

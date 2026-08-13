@@ -3,17 +3,29 @@
 
 /** Stable error codes emitted by the GoForge component runtime. */
 export const WasmErrorCode = {
+  /** The bundle manifest is missing, malformed or fails schema validation. */
   ManifestInvalid: "WASM_MANIFEST_INVALID",
+  /** The component bytes do not match the digest declared in the manifest. */
   IntegrityFailed: "WASM_INTEGRITY_FAILED",
+  /** The component ABI or schema version is outside the supported range. */
   Incompatible: "WASM_INCOMPATIBLE",
+  /** A request or response payload could not be encoded or decoded. */
   CodecInvalid: "WASM_CODEC_INVALID",
+  /** The adapter was already closed when the call was made. */
   Closed: "WASM_CLOSED",
+  /** The caller aborted the invocation through its abort signal. */
   Cancelled: "WASM_CANCELLED",
+  /** The invocation exceeded its deadline. */
   DeadlineExceeded: "WASM_DEADLINE_EXCEEDED",
+  /** No instance was available before the pool acquisition timeout. */
   PoolUnavailable: "WASM_POOL_UNAVAILABLE",
+  /** The host adapter refused the call before reaching the guest. */
   AdapterRejected: "WASM_ADAPTER_REJECTED",
+  /** The invocation failed inside the host boundary. */
   InvocationFailed: "WASM_INVOCATION_FAILED",
+  /** The guest component itself trapped or returned a failure. */
   GuestFailed: "WASM_GUEST_FAILED",
+  /** The guest requested a capability the host does not grant. */
   CapabilityDenied: "WASM_CAPABILITY_DENIED",
 } as const;
 

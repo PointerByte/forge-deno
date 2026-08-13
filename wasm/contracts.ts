@@ -99,7 +99,11 @@ export interface WasmBundleManifestV1 {
   operations: Record<GoforgeAbiOperationV1, WasmOperationContract>;
 }
 
-/** @deprecated Use {@link WasmBundleManifestV1}. */
+/**
+ * Release manifest of a component bundle.
+ *
+ * @deprecated Use {@link WasmBundleManifestV1}.
+ */
 export type WasmComponentManifestV1 = WasmBundleManifestV1;
 
 /** Trusted compatibility values compiled into the Deno host. */
@@ -112,9 +116,17 @@ export interface WasmCompatibility {
   abi?: typeof GOFORGE_ABI_V1;
   /** Supported release-bundle schema. */
   bundleSchema?: typeof GOFORGE_BUNDLE_MANIFEST_SCHEMA_V1;
-  /** @deprecated Use `abi`. */
+  /**
+   * Supported portable ABI, under its former name.
+   *
+   * @deprecated Use `abi`.
+   */
   abiVersion?: typeof GOFORGE_ABI_V1;
-  /** @deprecated Use `bundleSchema`. */
+  /**
+   * Supported release-bundle schema, under its former name.
+   *
+   * @deprecated Use `bundleSchema`.
+   */
   schemaVersion?: typeof GOFORGE_BUNDLE_MANIFEST_SCHEMA_V1;
 }
 

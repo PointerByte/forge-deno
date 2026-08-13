@@ -6,7 +6,28 @@ import * as filesystem from "@preview2/filesystem";
 import * as io from "@preview2/io";
 import * as random from "@preview2/random";
 
-import { instantiate } from "./standard-generated/goforge-standard.js";
+interface StandardOperations {
+  add(left: number, right: number): number;
+  greet(name: string): string;
+  reverseBytes(value: Uint8Array): Uint8Array;
+  summarize(
+    value: { left: number; right: number },
+  ): { total: number; label: string };
+  annotate(value: string): string;
+}
+
+interface StandardRoot {
+  operations: StandardOperations;
+}
+
+interface GeneratedStandardModule {
+  instantiate(
+    getCoreModule: (
+      name: string,
+    ) => WebAssembly.Module | Promise<WebAssembly.Module>,
+    imports: Record<string, unknown>,
+  ): StandardRoot | Promise<StandardRoot>;
+}
 
 const modules = new Map<string, WebAssembly.Module>();
 const getCoreModule = async (name: string): Promise<WebAssembly.Module> => {
@@ -49,17 +70,15 @@ const imports = {
   "wasi:random/random": random.random,
 };
 
-const root = await instantiate(getCoreModule, imports as never) as {
-  operations: {
-    add(left: number, right: number): number;
-    greet(name: string): string;
-    reverseBytes(value: Uint8Array): Uint8Array;
-    summarize(
-      value: { left: number; right: number },
-    ): { total: number; label: string };
-    annotate(value: string): string;
-  };
-};
+// The generated module is intentionally ignored by Git and only exists after
+// scripts/transpile.sh. Keep its unchecked boundary explicit and type every
+// operation consumed by this smoke test.
+const generatedUrl = new URL(
+  "./standard-generated/goforge-standard.js",
+  import.meta.url,
+);
+const generated = await import(generatedUrl.href) as GeneratedStandardModule;
+const root = await generated.instantiate(getCoreModule, imports);
 
 assert.equal(root.operations.add(20, 22), 42);
 assert.equal(root.operations.greet("Deno"), "hello, Deno");

@@ -239,7 +239,7 @@ export function buildMatrix(go: GoInventory, deno: DenoInventory, generatedAt: s
         : "documented-exception";
       const representative = match?.id ?? target.specifiers.join(" or ");
       const rationale = match
-        ? "A DenoForge symbol with the normalized Go API name exists in the domain export; semantic parity remains test-gated."
+        ? "A forge-deno symbol with the normalized Go API name exists in the domain export; semantic parity remains test-gated."
         : deprecated
         ? "The compatibility catalog retains this deprecated Go contract without adding new runtime coupling."
         : wasmClass === "D" || wasmClass === "E"
@@ -308,7 +308,7 @@ export function buildMatrix(go: GoInventory, deno: DenoInventory, generatedAt: s
 function markdown(matrix: ReturnType<typeof buildMatrix>): string {
   const summary = matrix.summary;
   const lines = [
-    "# GoForge → DenoForge Functional Coverage Matrix",
+    "# forge-go → forge-deno Functional Coverage Matrix",
     "",
     `Generated: \`${matrix.generatedAt}\``,
     "",

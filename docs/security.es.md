@@ -1,6 +1,6 @@
 # Seguridad
 
-El modelo de amenazas de la integración con GoForge: qué se defiende, cómo y — sobre todo — qué no.
+El modelo de amenazas de la integración con forge-go: qué se defiende, cómo y — sobre todo — qué no.
 
 ## Qué asume el diseño
 
@@ -78,7 +78,7 @@ Deben cumplirse tres condiciones independientes antes de que corra un adaptador 
 1. El caller lo nombra explícitamente como target de esa invocación.
 2. El **manifiesto del release** lo lista bajo `nativeAdapters` para esa operación.
 3. El adaptador lleva `parityQualified: true`, obtenible solo reproduciendo byte a byte cada vector
-   compartido de GoForge.
+   compartido de forge-go.
 
 Los reintentos están igual de acotados: exigen opt-in, una declaración `retrySafe` en el release, un
 error reintentable del catálogo y una entrada coincidente en el allowlist. Nunca se reintentan
@@ -102,13 +102,14 @@ Verificado en la auditoría de la Fase 0 y aplicado en CI:
 - `govulncheck` en cada módulo Go; análisis estático con `gosec`; `gitleaks` sobre todo el historial
   y el árbol de trabajo.
 - `deno audit` para el grafo de dependencias de Deno.
-- Cada GitHub Action está fijada por SHA; `wasm-tools` se verifica por checksum tras extraerlo.
+- Cada imagen del toolchain de release está fijada por digest; `wasm-tools` se verifica por checksum
+  tras extraerlo.
 - Se probó firmar/verificar/manipular con Cosign y el rollback offline por digest en un PoC.
 
 **Deliberadamente ausentes:** empaquetado de release, firma y publicación de procedencia. Atestiguar
 el bundle actual pondría una firma sobre un artefacto que falla de forma intermitente bajo carga
-sostenida. Esas puertas se agregan cuando ese defecto se cierre — no antes. Está declarado en ambos
-workflows de CI.
+sostenida. Esas puertas se agregan cuando ese defecto se cierre — no antes. Las puertas de release
+del Jenkins local aplican esa decisión.
 
 ## Debilidades conocidas
 
@@ -119,7 +120,7 @@ workflows de CI.
 - **`GOGC=off` nunca debe usarse en producción.** Elimina el fallo desactivando la recolección y lo
   sustituye por crecimiento ilimitado de memoria.
 - **Las garantías del adaptador nativo son tan fuertes como los vectores compartidos.** La
-  calificación prueba la coincidencia en los casos que GoForge publicó más los casos frontera de la
+  calificación prueba la coincidencia en los casos que forge-go publicó más los casos frontera de la
   suite diferencial. Es evidencia fuerte, no una prueba de equivalencia total.
 
 ## Relacionado

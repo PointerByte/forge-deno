@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Concrete failures from the GoForge integration, what actually causes them, and what to do.
+Concrete failures from the forge-go integration, what actually causes them, and what to do.
 
 Every runtime failure is a subclass of `WasmRuntimeError`, so the class tells you which layer failed
 before you read the message.
@@ -126,7 +126,7 @@ Tests and harnesses skip rather than fail when it is absent, so a standalone che
 
 ## `deno task contract:check` fails
 
-**Cause:** `wasm/generated/goforge-contract.ts` is stale relative to the GoForge release bundle — a
+**Cause:** `wasm/generated/goforge-contract.ts` is stale relative to the forge-go release bundle — a
 contract change landed upstream.
 
 **Fix:** `deno task contract`, then run the suite. `generated_contract_test.ts` will name the exact
@@ -135,7 +135,7 @@ the generated file; it is regenerated from the manifest.
 
 ## The vendored vectors drift test fails
 
-**Cause:** `wasm/testdata/vectors/v1.json` no longer matches GoForge's copy. GoForge owns those
+**Cause:** `wasm/testdata/vectors/v1.json` no longer matches forge-go's copy. forge-go owns those
 bytes.
 
 **Fix:** re-copy from `forge-go-private/portable/testdata/vectors/v1.json`. Note that

@@ -1,12 +1,12 @@
-# DenoForge
+# forge-deno
 
 Un conjunto de herramientas modular para aplicaciones orientadas a servicios en **Deno**, con
 criptografía, logging estructurado, seguridad/JWT, jobs y workers en segundo plano y utilidades HTTP
 incluidas.
 
-DenoForge está construido sobre la **Web Crypto API** y la **librería estándar de Deno**, por lo que
-funciona prácticamente sin dependencias externas en tiempo de ejecución (solo BLAKE3 se delega, ver
-[Notas](#notas)). Cada capacidad vive en su propio módulo que puedes importar de forma
+forge-deno está construido sobre la **Web Crypto API** y la **librería estándar de Deno**, por lo
+que funciona prácticamente sin dependencias externas en tiempo de ejecución (solo BLAKE3 se delega,
+ver [Notas](#notas)). Cada capacidad vive en su propio módulo que puedes importar de forma
 independiente.
 
 > 🇬🇧 [English version](./README.md)
@@ -19,7 +19,7 @@ independiente.
 | `encrypt/aws-kms`         | `@pointerbyte/denoforge/encrypt/aws-kms`         | cifrado/firma + ciclo de vida de claves con AWS KMS                            |
 | `encrypt/azure-key-vault` | `@pointerbyte/denoforge/encrypt/azure-key-vault` | criptografía + ciclo de vida con Azure Key Vault                               |
 | `encrypt/gcp-kms`         | `@pointerbyte/denoforge/encrypt/gcp-kms`         | criptografía + ciclo de vida con Google Cloud KMS                              |
-| `logger`                  | `@pointerbyte/denoforge/logger`                  | logging por niveles con formato GoForge, sanitizador, middleware HTTP + gRPC   |
+| `logger`                  | `@pointerbyte/denoforge/logger`                  | logging por niveles con formato forge-go, sanitizador, middleware HTTP + gRPC  |
 | `security`                | `@pointerbyte/denoforge/security`                | JWT (HS256/RS256/PS256/EdDSA), auth por cookie, middleware HTTP + gRPC         |
 | `tools`                   | `@pointerbyte/denoforge/tools`                   | jobs por intervalo/cron, bucle de workers acotado, flag de modo test           |
 | `config`                  | `@pointerbyte/denoforge/config`                  | cliente REST `fetch`, servidor HTTP nativo `Deno.serve`, cliente/servidor gRPC |
@@ -31,8 +31,8 @@ independiente.
 
 | Guía                                                  | Cubre                                                                          |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [Arquitectura](./docs/architecture.es.md)             | Cómo encajan GoForge y DenoForge, y las tres rutas de ejecución                |
-| [Migración](./docs/migration.es.md)                   | Pasar de GoForge a DenoForge, y cuánto conservar                               |
+| [Arquitectura](./docs/architecture.es.md)             | Cómo encajan forge-go y forge-deno, y las tres rutas de ejecución              |
+| [Migración](./docs/migration.es.md)                   | Pasar de forge-go a forge-deno, y cuánto conservar                             |
 | [Compatibilidad](./docs/compatibility.es.md)          | Versiones fijadas, garantías, pisos de cobertura y puertas de deriva           |
 | [Seguridad](./docs/security.es.md)                    | Modelo de amenazas, frontera de capacidades, integridad, debilidades conocidas |
 | [Solución de problemas](./docs/troubleshooting.es.md) | Fallos concretos, sus causas reales y qué hacer                                |
@@ -44,17 +44,17 @@ independiente.
 
 ## Instalación
 
-DenoForge se puede consumir **localmente** desde otros proyectos Deno, con o sin publicación en un
+forge-deno se puede consumir **localmente** desde otros proyectos Deno, con o sin publicación en un
 registro.
 
 ### Opción A — import map con ruta local (recomendado para uso local)
 
-En el `deno.json` de tu proyecto, apunta un alias a la carpeta de DenoForge:
+En el `deno.json` de tu proyecto, apunta un alias a la carpeta de forge-deno:
 
 ```json
 {
   "imports": {
-    "@denoforge/": "../DenoForge/"
+    "@denoforge/": "../forge-deno/"
   }
 }
 ```
@@ -69,7 +69,7 @@ import { createService } from "@denoforge/security/mod.ts";
 ### Opción B — import relativo directo
 
 ```ts
-import { newLocalProvider } from "../DenoForge/encrypt/mod.ts";
+import { newLocalProvider } from "../forge-deno/encrypt/mod.ts";
 ```
 
 ### Opción C — como paquete JSR
@@ -154,8 +154,8 @@ sin acceso a la nube. Paquetes peer requeridos: `@aws-sdk/client-kms`, `@azure/k
 
 ### `logger`
 
-Logging por niveles que emite el **formato de log de GoForge**, con **sanitizador** de valores
-sensibles y middleware HTTP/gRPC. Cada entrada sigue el esquema de GoForge
+Logging por niveles que emite el **formato de log de forge-go**, con **sanitizador** de valores
+sensibles y middleware HTTP/gRPC. Cada entrada sigue el esquema de forge-go
 `{level, timestamp, traceID, message, details, process, method, line, latency}`, donde `method` y
 `line` ubican el punto de llamada y `details.system` proviene de `service.name`.
 
@@ -171,7 +171,7 @@ const log = initLogger({
 log.info("user.login", { userId: 1, password: "x" }); // password -> [REDACTED]
 ```
 
-El formato de salida se elige con `formatter`, igual que la clave `logger.formatter` de GoForge:
+El formato de salida se elige con `formatter`, igual que la clave `logger.formatter` de forge-go:
 
 - `text`, `txt` o la cadena vacía (el **default**) producen el layout de texto:
 
@@ -197,16 +197,16 @@ El formato de salida se elige con `formatter`, igual que la clave `logger.format
 
 - cualquier otra cadena se trata como plantilla sobre los campos de la entrada, con los helpers
   `json`, `buildDetails` y `buildServices` (p. ej.
-  `"{{.Level}} | {{.Message}} | {{json (buildServices .Process)}}"`). Como en GoForge, una plantilla
-  cuya salida es JSON válido se re-normaliza a las claves estándar, así que las plantillas no pueden
-  renombrarlas.
+  `"{{.Level}} | {{.Message}} | {{json (buildServices .Process)}}"`). Como en forge-go, una
+  plantilla cuya salida es JSON válido se re-normaliza a las claves estándar, así que las plantillas
+  no pueden renombrarlas.
 
 Los atributos reconocidos (`method`, `path`, `headers`, `request`, `response`, `client`, `protocol`,
 `system`, más `traceID`, `latency` y `services` de nivel superior) se mapean a su lugar canónico del
 esquema; el resto se fusiona dentro de `details`.
 
 La dependencia no contiene ninguna política embebida de claves sensibles. Igual que
-`logger.sensibleKeys` de GoForge, el logger predeterminado lee la lista exacta desde
+`logger.sensibleKeys` de forge-go, el logger predeterminado lee la lista exacta desde
 `LOGGER_SENSIBLEKEYS`. Acepta un valor separado por comas o un arreglo JSON:
 
 ```bash
@@ -223,14 +223,14 @@ evitar la carga desde el entorno, pasa un `sanitizer` explícito, por ejemplo
 `newSanitizer(["password"])`; su arreglo se usa exactamente y `newSanitizer([])` desactiva la
 redacción.
 
-El matching es por subcadena y sin distinguir mayúsculas, igual que GoForge. La dependencia no
+El matching es por subcadena y sin distinguir mayúsculas, igual que forge-go. La dependencia no
 rechaza valores cortos o genéricos, así que el operador debe configurar nombres precisos: un `id`
 configurado también coincide con `provider`, mientras `id_token` tiene un efecto más acotado.
 
 #### Destino a archivo y rotación
 
 La salida va a un `Sink` configurable y por defecto usa stdout. Para replicar el tee rotativo a
-stdout/archivo de GoForge:
+stdout/archivo de forge-go:
 
 ```ts
 const fileLog = initLogger({
@@ -444,7 +444,7 @@ const res = await client.unary("Echo", { message: "hi" }, {
 
 ### `wasm`
 
-La entrada dedicada ofrece un host perezoso y acotado para el ABI v1 canónico de GoForge. Los
+La entrada dedicada ofrece un host perezoso y acotado para el ABI v1 canónico de forge-go. Los
 envelopes JSON crudos usan `abi`, `id`, metadatos/errores snake_case y campos Base64 con padding
 explícitos por operación. Verifica por separado el manifiesto portable y el bundle inmutable antes
 de ejecutar una fábrica revisada. Incluye cancelación, deadlines, errores tipados, health, cierre,
@@ -453,7 +453,7 @@ nunca selecciona un adaptador automáticamente, tampoco en seguridad o criptogra
 
 Para quienes no pueden pagar el costo por llamada del componente, `createNativeGoforgeAdapter()`
 implementa las mismas ocho operaciones de forma nativa. Solo se vuelve enrutable después de que
-`qualifyNativeAdapter()` reproduzca byte a byte cada vector compartido de GoForge, así que una
+`qualifyNativeAdapter()` reproduzca byte a byte cada vector compartido de forge-go, así que una
 implementación desviada no puede registrarse.
 
 Consulta la [guía del runtime de componentes](./wasm/README.es.md) para conocer el manifiesto
@@ -461,9 +461,9 @@ estricto, integración de la fábrica, política de reintentos, permisos y contr
 
 ## Herramientas de línea de comandos (`cmd/`)
 
-DenoForge incluye un conjunto de CLIs, ejecutables con `deno run` o con las tareas incluidas:
+forge-deno incluye un conjunto de CLIs, ejecutables con `deno run` o con las tareas incluidas:
 
-- **`qdeno`** — genera un nuevo servicio DenoForge (HTTP o gRPC) en un directorio.
+- **`qdeno`** — genera un nuevo servicio forge-deno (HTTP o gRPC) en un directorio.
 
   ```sh
   deno task qdeno new http my-api
@@ -533,7 +533,7 @@ frozen antes de ejecutar esos gates.
 ## Estructura del proyecto
 
 ```text
-DenoForge/
+forge-deno/
 ├── deno.json              # import map, tareas, exports
 ├── mod.ts                 # barrel raíz con espacios de nombres
 ├── encrypt/               # criptografía (Web Crypto) + cloud KMS
@@ -604,4 +604,4 @@ deno task example:server # sirve en :8080 (la tarea incluye --allow-net)
 
 Apache-2.0. Ver [LICENSE](./LICENSE).
 
-> El diseño y la organización de módulos de DenoForge están inspirados en el proyecto GoForge.
+> El diseño y la organización de módulos de forge-deno están inspirados en el proyecto forge-go.

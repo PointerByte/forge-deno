@@ -216,7 +216,7 @@ function markdown(value: ReturnType<typeof buildCatalog>): string {
     `| \`${api.specifier}\` | \`${api.name}\` | ${api.kind} | ${api.documented} | ${api.source}:${api.line} |`
   );
   return [
-    "# DenoForge Public API Inventory",
+    "# forge-deno Public API Inventory",
     "",
     `Generated: \`${value.generatedAt}\``,
     "",

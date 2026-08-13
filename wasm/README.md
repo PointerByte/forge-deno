@@ -1,16 +1,16 @@
-# GoForge component runtime
+# forge-go component runtime
 
-The public `@pointerbyte/denoforge/wasm` entry is the fail-closed Deno host for GoForge portable
+The public `@pointerbyte/denoforge/wasm` entry is the fail-closed Deno host for forge-go portable
 logic. Importing or constructing it performs no I/O. The first call verifies the immutable release
 bundle before any bytes reach the injected component factory. Every new instance must then return
-GoForge's canonical portable manifest before it may dispatch a request.
+forge-go's canonical portable manifest before it may dispatch a request.
 
 This directory is production code and never imports a research implementation.
 
 ## Canonical ABI v1
 
-GoForge is the contract source of truth. Requests use `abi`, `id`, `operation`, optional `metadata`,
-and an operation-specific raw JSON `payload`:
+forge-go is the contract source of truth. Requests use `abi`, `id`, `operation`, optional
+`metadata`, and an operation-specific raw JSON `payload`:
 
 ```json
 {
@@ -51,7 +51,7 @@ Responses use `abi`, `id`, and `ok`, followed by exactly one `result` or `error`
 }
 ```
 
-There is no generic `$type` byte wrapper. The operation fields defined by GoForge—`data`, `key`,
+There is no generic `$type` byte wrapper. The operation fields defined by forge-go—`data`, `key`,
 `nonce`, `aad`, `plaintext`, `ciphertext`, `digest`, and `mac`—are RFC 4648 standard-alphabet Base64
 strings with required padding. Use `encodeAbiBase64` and `decodeAbiBase64` explicitly. Raw
 `Uint8Array`, unpadded or URL-safe Base64, uppercase error codes, unknown fields, duplicate response
@@ -69,7 +69,7 @@ byte-equivalent request envelopes and response parity for all eight operations.
 
 ## Two intentionally different manifests
 
-`goforge.manifest.v1` is exported by GoForge and describes the portable ABI, limits, capabilities,
+`goforge.manifest.v1` is exported by forge-go and describes the portable ABI, limits, capabilities,
 operations, and error catalog. `goforge.bundle-manifest.v1` is release metadata used only to verify
 component, glue, and core-module digests. The runtime checks both and rejects disagreement.
 
@@ -143,7 +143,7 @@ await runtime.close();
 ```
 
 Each factory instance provides `manifest()` and `dispatch(requestJson, executionState)`. The state
-maps directly to GoForge's `clockChecked`, `nowUnixMilliseconds`, `cancellationChecked`,
+maps directly to forge-go's `clockChecked`, `nowUnixMilliseconds`, `cancellationChecked`,
 `cancellationToken`, and `cancellationRequested` fields. This keeps deadline/cancellation checks
 outside the serialized business payload while still making them explicit and fail-closed.
 
@@ -170,7 +170,7 @@ const runtime = new GoforgeWasmRuntime({
 });
 ```
 
-WASI imports come from `createDeniedWasiImports()`. GoForge's portable core performs no I/O, so the
+WASI imports come from `createDeniedWasiImports()`. forge-go's portable core performs no I/O, so the
 host supplies all eighteen interfaces the component declares in their **denied** form: arguments and
 environment are empty, standard streams are closed, no terminal is attached, and every filesystem
 entry point returns `not-permitted`. Only two capabilities are real — clocks, which the Go scheduler
@@ -213,8 +213,8 @@ target, so security operations cannot silently downgrade.
 Crypto and string primitives. It exists because the component costs 23–966× more per call than
 native code on the same envelope, so hot paths need somewhere else to go.
 
-It is the one place in DenoForge that reimplements portable rules, and it is allowed to only because
-the equivalence is machine-checked rather than asserted:
+It is the one place in forge-deno that reimplements portable rules, and it is allowed to only
+because the equivalence is machine-checked rather than asserted:
 
 ```ts
 const vectors = JSON.parse(await Deno.readTextFile("wasm/testdata/vectors/v1.json")).vectors;
@@ -227,8 +227,8 @@ await runtime.invoke("crypto.sha256", { data }, {
 ```
 
 `createNativeGoforgeAdapter` returns `parityQualified: false`, which the registry refuses to route
-to. Only `qualifyNativeAdapter` — which replays every GoForge vector and compares byte for byte, and
-throws if any operation has no covering vector — can produce a qualified adapter. A drifting
+to. Only `qualifyNativeAdapter` — which replays every forge-go vector and compares byte for byte,
+and throws if any operation has no covering vector — can produce a qualified adapter. A drifting
 implementation therefore cannot be registered at all.
 
 Beyond the vectors, `native_test.ts` runs a differential suite that compares the adapter against the

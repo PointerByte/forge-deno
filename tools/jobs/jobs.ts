@@ -72,6 +72,7 @@ export class Jobs {
   readonly #controls = new Map<string, JobControl>();
   #started = false;
 
+  /** Creates an empty scheduler and registers it for global shutdown. */
   constructor() {
     registry.add(this);
     restarters.set(this, () => {

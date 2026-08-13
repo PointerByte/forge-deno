@@ -11,7 +11,7 @@ Which versions are pinned, what is guaranteed across them, and how drift is dete
 | Portable manifest schema | `goforge.manifest.v1`        | Regenerating the TypeScript contract                               |
 | Release bundle schema    | `goforge.bundle-manifest.v1` | Independent of the portable contract; release metadata only        |
 
-The two manifests are deliberately different documents. `goforge.manifest.v1` is GoForge's contract
+The two manifests are deliberately different documents. `goforge.manifest.v1` is forge-go's contract
 — ABI, limits, capabilities, operations, errors. `goforge.bundle-manifest.v1` is release metadata
 for verifying digests. The runtime validates both and rejects any disagreement.
 
@@ -68,21 +68,21 @@ WASM portability classes: A=140, B=171, C=75, D=331, E=174.
 
 Four gates fail loudly instead of letting the two repositories diverge silently:
 
-| Gate                                         | Detects                                                          |
-| -------------------------------------------- | ---------------------------------------------------------------- |
-| `deno task contract:check`                   | The generated TypeScript contract is stale vs the GoForge bundle |
-| `generated_contract_test.ts`                 | The hand-written public surface disagrees with the generated one |
-| `vectors_test.ts`                            | The vendored shared vectors differ from GoForge's copy           |
-| `deno task inventory:check` / `matrix:check` | The public API inventory or coverage matrix is stale             |
+| Gate                                         | Detects                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| `deno task contract:check`                   | The generated TypeScript contract is stale vs the forge-go bundle |
+| `generated_contract_test.ts`                 | The hand-written public surface disagrees with the generated one  |
+| `vectors_test.ts`                            | The vendored shared vectors differ from forge-go's copy           |
+| `deno task inventory:check` / `matrix:check` | The public API inventory or coverage matrix is stale              |
 
 All four run in CI. The generated contract is regenerated, never hand-edited.
 
 ## Coverage floors
 
-- **GoForge:** no per-module regression from the Phase 0 baseline — root 91.0%, logger 94.8%,
+- **forge-go:** no per-module regression from the Phase 0 baseline — root 91.0%, logger 94.8%,
   encrypt 89.7%, security 91.8%, qgo 87.6%, go-openssl 83.9%, portable 92.2%. Enforced by
   `scripts/check-coverage.sh`.
-- **DenoForge:** ≥80% overall, enforced by `deno task cov:check` against a fresh profile.
+- **forge-deno:** ≥80% overall, enforced by `deno task cov:check` against a fresh profile.
 
 ## Related
 

@@ -1,10 +1,10 @@
 # Architecture
 
-How GoForge and DenoForge fit together, and which of the three execution paths a call takes.
+How forge-go and forge-deno fit together, and which of the three execution paths a call takes.
 
 ## Two repositories, one contract
 
-GoForge (Go) is the **single source of truth** for portable business rules. DenoForge (Deno)
+forge-go (Go) is the **single source of truth** for portable business rules. forge-deno (Deno)
 implements the same capabilities for the Deno ecosystem. They are separate repositories and neither
 imports the other at runtime.
 
@@ -13,13 +13,13 @@ What binds them is a contract, not code sharing:
 ```
 forge-go-private/portable/          the dependency-free Go core: 8 operations, error catalog, limits
         │
-        ├── testdata/vectors/v1.json ──► vendored into DenoForge as wasm/testdata/vectors/v1.json
-        │                                (drift-tested; GoForge stays the owner)
+        ├── testdata/vectors/v1.json ──► vendored into forge-deno as wasm/testdata/vectors/v1.json
+        │                                (drift-tested; forge-go stays the owner)
         │
         ├── component/                   WIT world + bridge, compiled to a WebAssembly component
         │     └── artifacts/             release bundle: component, glue, core modules, manifests
         │
-        └── goforge.abi.manifest.json ─► generates DenoForge's wasm/generated/goforge-contract.ts
+        └── goforge.abi.manifest.json ─► generates forge-deno's wasm/generated/goforge-contract.ts
                                          (deno task contract:check fails on drift)
 ```
 
@@ -28,7 +28,7 @@ process access, OpenTelemetry and CLI terminals are **host adapters** and never 
 
 ## Three execution paths
 
-A DenoForge caller can reach the same eight portable operations three ways. They are not
+A forge-deno caller can reach the same eight portable operations three ways. They are not
 interchangeable, and the runtime never switches between them on its own.
 
 | Path               | Entry point                                                      | Cost per call | When to use                                               |
@@ -51,10 +51,10 @@ manifest name the adapter for that operation.
 
 ### Why the native adapter is allowed to reimplement portable rules
 
-It is the only place in DenoForge that does, and the equivalence is machine-checked rather than
+It is the only place in forge-deno that does, and the equivalence is machine-checked rather than
 trusted. `createNativeGoforgeAdapter()` returns `parityQualified: false`, which the registry refuses
-to route to. Only `qualifyNativeAdapter()` — which replays every GoForge shared vector byte for byte
-and rejects any claimed operation with no covering vector — can produce a qualified adapter. A
+to route to. Only `qualifyNativeAdapter()` — which replays every forge-go shared vector byte for
+byte and rejects any claimed operation with no covering vector — can produce a qualified adapter. A
 differential suite additionally holds it against the real component over Unicode boundaries,
 validation ordering and every failure path.
 
@@ -118,7 +118,7 @@ A file swapped between the digest check and instantiation therefore cannot be ex
 ## Related
 
 - [Compatibility](./compatibility.md) — version pins and what is guaranteed across them
-- [Migration](./migration.md) — moving from GoForge to DenoForge
+- [Migration](./migration.md) — moving from forge-go to forge-deno
 - [Security](./security.md) — threat model and what is _not_ protected
 - [Troubleshooting](./troubleshooting.md) — concrete failures and their causes
 - [Component runtime guide](../wasm/README.md) — manifests, factory, retries, pool

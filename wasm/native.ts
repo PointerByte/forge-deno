@@ -69,7 +69,14 @@ export interface GoforgeSharedVector {
   /** Vector name, used to report which case failed qualification. */
   name: string;
   /** Canonical ABI request. */
-  request: { operation: GoforgeAbiOperationV1; payload: AbiValue; id?: string };
+  request: {
+    /** Canonical ABI operation the vector exercises. */
+    operation: GoforgeAbiOperationV1;
+    /** Operation arguments, already in canonical ABI form. */
+    payload: AbiValue;
+    /** Correlation identifier echoed back in the response, when present. */
+    id?: string;
+  };
   /** Canonical ABI response GoForge produced for that request. */
   response: AbiValue;
 }

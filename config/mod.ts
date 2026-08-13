@@ -14,6 +14,7 @@
 export {
   ClientHTTP,
   type ClientOptions,
+  /** Asynchronous function that handles one HTTP request. */
   type Handler,
   HttpClientError,
   httpContext,
@@ -25,13 +26,16 @@ export {
   isValidTraceparent,
   isValidTracestate,
   type Method,
+  /** Function that wraps an HTTP handler. */
   type Middleware,
   newClientHTTP,
   newHttpServer,
+  /** Timed downstream operation included in request logs. */
   type Process,
   type RequestOptions,
   type Rest,
   RouteGroup,
+  /** Outcome classification used by traced processes. */
   type Status,
 } from "./http/mod.ts";
 
@@ -39,11 +43,15 @@ export {
 export {
   type CallOptions,
   GrpcClient,
+  /** Per-call context handed to unary handlers and interceptors. */
   type GrpcContext,
   GrpcError,
+  /** Structural metadata collection used by dependency-free interceptors. */
   type GrpcMetadata,
+  /** String or binary value accepted in gRPC metadata. */
   type GrpcMetadataValue,
   GrpcServer,
+  /** Dependency-free view of a unary server call. */
   type GrpcServerCall,
   type GrpcServerOptions,
   type GrpcStatus,
@@ -52,6 +60,7 @@ export {
   type LoadProtoOptions,
   newGrpcClient,
   newGrpcServer,
+  /** Function that wraps the next unary handler in an interceptor chain. */
   type ServerInterceptor,
   type ServiceHandlers,
   status as grpcStatus,

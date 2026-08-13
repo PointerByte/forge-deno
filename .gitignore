@@ -1,0 +1,14 @@
+**/.vscode
+**/.idea
+**/.claude
+**/logs
+**/coverage
+**/coverage.html
+**/.deno
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+*.log
+*.swp
+.DS_Store

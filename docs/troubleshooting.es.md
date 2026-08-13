@@ -1,6 +1,6 @@
 # Solución de problemas
 
-Fallos concretos de la integración con GoForge, qué los causa realmente y qué hacer.
+Fallos concretos de la integración con forge-go, qué los causa realmente y qué hacer.
 
 Todo fallo del runtime es una subclase de `WasmRuntimeError`, así que la clase te dice qué capa
 falló antes de leer el mensaje.
@@ -134,7 +134,7 @@ independiente siga siendo usable.
 ## Falla `deno task contract:check`
 
 **Causa:** `wasm/generated/goforge-contract.ts` quedó obsoleto respecto del bundle de release de
-GoForge — llegó un cambio de contrato aguas arriba.
+forge-go — llegó un cambio de contrato aguas arriba.
 
 **Arreglo:** `deno task contract` y luego ejecuta la suite. `generated_contract_test.ts` nombrará la
 deriva exacta si la superficie escrita a mano en `contracts.ts` / `codec.ts` también necesita
@@ -142,7 +142,7 @@ actualizarse. No edites el archivo generado; se regenera desde el manifiesto.
 
 ## Falla la prueba de deriva de los vectores copiados
 
-**Causa:** `wasm/testdata/vectors/v1.json` ya no coincide con la copia de GoForge. GoForge es el
+**Causa:** `wasm/testdata/vectors/v1.json` ya no coincide con la copia de forge-go. forge-go es el
 dueño de esos bytes.
 
 **Arreglo:** vuelve a copiar desde `forge-go-private/portable/testdata/vectors/v1.json`. Ten en

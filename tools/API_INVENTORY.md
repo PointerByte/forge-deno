@@ -1,4 +1,4 @@
-# DenoForge API Inventory
+# forge-deno API Inventory
 
 `api_inventory.ts` runs the exact local Deno parser over every entry in `deno.json#exports` and
 normalizes its JSON documentation graph into deterministic JSON and Markdown catalogs.

@@ -67,7 +67,12 @@ export interface LoggerOptions {
   /** File rotation policy (`logger.rotate`). Ignored when `sink` is provided. */
   rotate?: RotateOptions;
   /** Service metadata; `name` becomes `details.system` (GoForge `app.name`). */
-  service?: { name?: string; version?: string };
+  service?: {
+    /** Service identifier recorded as `details.system`. */
+    name?: string;
+    /** Service version recorded alongside the name. */
+    version?: string;
+  };
   /** Attributes attached to every record produced by this logger. */
   base?: Record<string, unknown>;
 }

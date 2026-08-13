@@ -10,9 +10,13 @@
 
 /** Severity levels, ordered ascending. */
 export const LogLevel = {
+  /** Diagnostic detail, disabled in production by default. */
   Debug: -4,
+  /** Normal operational events. */
   Info: 0,
+  /** Recoverable anomalies that do not interrupt the operation. */
   Warn: 4,
+  /** Failures that abort the operation being logged. */
   Error: 8,
 } as const;
 /** Union of supported logger severity values. */

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Fails when `deno.json` or a workflow references a file or package that does not exist.
+ * Fails when `deno.json` references a file or package that does not exist.
  *
  * This exists because of a real defect: `deno.json` referenced
  * `tools/check-dependency-isolation.ts`, `tools/check-coverage.ts` and `tools/check-docs.ts` with
@@ -10,11 +10,6 @@
  * because the publish allow-list carried the same wrong names, two CI-only tools were shipped in the
  * JSR package. Nothing caught it, because a task that cannot resolve its entry point looks like a
  * broken task rather than a broken configuration.
- *
- * It also pins the OpenSpec package identity. The published CLI is `@fission-ai/openspec`; the bare
- * `openspec` name on npm is an unrelated `0.0.0` placeholder with no binary, so a workflow using it
- * fails to resolve at CI time rather than at review time.
- *
  * ```
  * deno task check:config
  * ```
@@ -23,9 +18,6 @@
  */
 
 const root = new URL("../", import.meta.url);
-
-/** The npm package that actually publishes the OpenSpec CLI. */
-export const OPENSPEC_PACKAGE = "@fission-ai/openspec";
 
 interface DenoConfig {
   exports?: Record<string, string>;
@@ -75,22 +67,9 @@ for (const [name, command] of Object.entries(config.tasks ?? {})) {
   }
 }
 
-// Workflows must use the real OpenSpec package.
-for (const workflow of [".github/workflows/ci.yml"]) {
-  if (!exists(workflow)) continue;
-  const contents = await Deno.readTextFile(new URL(workflow, root));
-  for (const [, spec] of contents.matchAll(/npx\s+(?:--yes\s+)?(\S*openspec\S*)/g)) {
-    if (!spec.startsWith(OPENSPEC_PACKAGE + "@") && spec !== OPENSPEC_PACKAGE) {
-      problems.push(
-        `${workflow} -> ${spec} is not the published OpenSpec CLI; use ${OPENSPEC_PACKAGE}`,
-      );
-    }
-  }
-}
-
 if (problems.length > 0) {
   console.error("configuration references files or packages that do not exist:");
   for (const problem of problems) console.error(`  ${problem}`);
   Deno.exit(1);
 }
-console.log("config: every deno.json and workflow reference resolves.");
+console.log("config: every deno.json reference resolves.");

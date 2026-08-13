@@ -1,6 +1,6 @@
 # Security
 
-The threat model for the GoForge integration: what is defended, how, and — importantly — what is
+The threat model for the forge-go integration: what is defended, how, and — importantly — what is
 not.
 
 ## What the design assumes
@@ -75,7 +75,7 @@ Three independent conditions must hold before a native adapter runs:
 
 1. The caller explicitly names it as the target for that invocation.
 2. The **release manifest** lists it under `nativeAdapters` for that operation.
-3. The adapter carries `parityQualified: true`, obtainable only by replaying every GoForge shared
+3. The adapter carries `parityQualified: true`, obtainable only by replaying every forge-go shared
    vector byte for byte.
 
 Retries are similarly constrained: they require an opt-in, a `retrySafe` declaration in the release,
@@ -99,12 +99,14 @@ Verified in the Phase 0 audit and enforced in CI:
 - `govulncheck` over every Go module; `gosec` static analysis; `gitleaks` over full history and the
   working tree.
 - `deno audit` for the Deno dependency graph.
-- Every GitHub Action is SHA-pinned; `wasm-tools` is checksum-verified after extraction.
+- Every release toolchain image is digest-pinned; `wasm-tools` is checksum-verified after
+  extraction.
 - Cosign sign/verify/tamper and offline digest-rollback were proven in a PoC.
 
 **Deliberately absent:** release packaging, signing and provenance publication. Attesting the
 current bundle would put a signature on an artifact that intermittently traps under sustained load.
-Those gates get added when that defect is closed — not before. This is stated in both CI workflows.
+Those gates get added when that defect is closed — not before. The local Jenkins release gates
+enforce that decision.
 
 ## Known weaknesses
 
@@ -114,7 +116,7 @@ Those gates get added when that defect is closed — not before. This is stated 
 - **`GOGC=off` must never be used in production.** It removes the trap by disabling collection and
   substitutes unbounded memory growth.
 - **The native adapter's guarantees are only as strong as the shared vectors.** Qualification proves
-  agreement on the cases GoForge published plus the differential suite's boundary cases. It is
+  agreement on the cases forge-go published plus the differential suite's boundary cases. It is
   strong evidence, not a proof of total equivalence.
 
 ## Related

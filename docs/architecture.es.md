@@ -1,10 +1,10 @@
 # Arquitectura
 
-Cómo encajan GoForge y DenoForge, y cuál de las tres rutas de ejecución toma una llamada.
+Cómo encajan forge-go y forge-deno, y cuál de las tres rutas de ejecución toma una llamada.
 
 ## Dos repositorios, un contrato
 
-GoForge (Go) es la **única fuente de verdad** de las reglas de negocio portables. DenoForge (Deno)
+forge-go (Go) es la **única fuente de verdad** de las reglas de negocio portables. forge-deno (Deno)
 implementa las mismas capacidades para el ecosistema Deno. Son repositorios separados y ninguno
 importa al otro en tiempo de ejecución.
 
@@ -13,13 +13,13 @@ Lo que los une es un contrato, no código compartido:
 ```
 forge-go-private/portable/          el núcleo Go sin dependencias: 8 operaciones, catálogo de errores, límites
         │
-        ├── testdata/vectors/v1.json ──► copiado a DenoForge como wasm/testdata/vectors/v1.json
-        │                                (con prueba de deriva; GoForge sigue siendo el dueño)
+        ├── testdata/vectors/v1.json ──► copiado a forge-deno como wasm/testdata/vectors/v1.json
+        │                                (con prueba de deriva; forge-go sigue siendo el dueño)
         │
         ├── component/                   mundo WIT + bridge, compilado a un componente WebAssembly
         │     └── artifacts/             bundle de release: componente, glue, módulos core, manifiestos
         │
-        └── goforge.abi.manifest.json ─► genera wasm/generated/goforge-contract.ts en DenoForge
+        └── goforge.abi.manifest.json ─► genera wasm/generated/goforge-contract.ts en forge-deno
                                          (deno task contract:check falla ante deriva)
 ```
 
@@ -29,7 +29,7 @@ nunca entran en él.
 
 ## Tres rutas de ejecución
 
-Un caller de DenoForge puede alcanzar las mismas ocho operaciones portables de tres formas. No son
+Un caller de forge-deno puede alcanzar las mismas ocho operaciones portables de tres formas. No son
 intercambiables, y el runtime nunca cambia entre ellas por su cuenta.
 
 | Ruta                 | Punto de entrada                                                 | Costo por llamada | Cuándo usarla                                                         |
@@ -52,10 +52,10 @@ incidente de seguridad. El caller elige el target en cada invocación, y además
 
 ### Por qué el adaptador nativo puede reimplementar reglas portables
 
-Es el único lugar de DenoForge que lo hace, y la equivalencia se verifica por máquina en vez de
+Es el único lugar de forge-deno que lo hace, y la equivalencia se verifica por máquina en vez de
 confiarse. `createNativeGoforgeAdapter()` devuelve `parityQualified: false`, y el registro se niega
 a enrutar hacia eso. Solo `qualifyNativeAdapter()` — que reproduce byte a byte cada vector
-compartido de GoForge y rechaza cualquier operación declarada sin vector que la cubra — puede
+compartido de forge-go y rechaza cualquier operación declarada sin vector que la cubra — puede
 producir un adaptador calificado. Una suite diferencial además lo contrasta con el componente real
 en fronteras Unicode, orden de validaciones y todas las rutas de fallo.
 
@@ -120,7 +120,7 @@ ejecutarse.
 ## Relacionado
 
 - [Compatibilidad](./compatibility.es.md) — versiones fijadas y qué se garantiza entre ellas
-- [Migración](./migration.es.md) — pasar de GoForge a DenoForge
+- [Migración](./migration.es.md) — pasar de forge-go a forge-deno
 - [Seguridad](./security.es.md) — modelo de amenazas y qué _no_ está protegido
 - [Solución de problemas](./troubleshooting.es.md) — fallos concretos y sus causas
 - [Guía del runtime de componentes](../wasm/README.es.md) — manifiestos, factoría, reintentos, pool

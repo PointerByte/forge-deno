@@ -12,10 +12,15 @@
 
 /** Outcome of a traced process, classified from its status code. */
 export const Status = {
+  /** The process completed successfully (2xx-equivalent). */
   Success: "SUCCESS",
+  /** The process failed because of the server (5xx-equivalent). */
   Error: "ERROR",
+  /** The process failed because of the caller (4xx-equivalent). */
   ClientError: "CLIENT_ERROR",
+  /** The process finished with a status that fits no other class. */
   Other: "OTHER",
+  /** No status code was recorded for the process. */
   Unknown: "UNKNOWN",
 } as const;
 /** Union of process status values. */

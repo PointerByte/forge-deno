@@ -22,10 +22,10 @@ try {
     Deno.readTextFile(generated),
   ]);
   if (actual !== expected) {
-    console.error("DenoForge API inventory drifted; run `deno task inventory` and review it.");
+    console.error("forge-deno API inventory drifted; run `deno task inventory` and review it.");
     Deno.exit(1);
   }
-  console.log("DenoForge API inventory is current.");
+  console.log("forge-deno API inventory is current.");
 } finally {
   await Deno.remove(directory, { recursive: true });
 }

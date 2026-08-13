@@ -12,7 +12,7 @@ Qué versiones están fijadas, qué se garantiza entre ellas y cómo se detecta 
 | Esquema del bundle de release   | `goforge.bundle-manifest.v1` | Independiente del contrato portable; solo metadatos de release                  |
 
 Los dos manifiestos son documentos deliberadamente distintos. `goforge.manifest.v1` es el contrato
-de GoForge — ABI, límites, capacidades, operaciones, errores. `goforge.bundle-manifest.v1` son
+de forge-go — ABI, límites, capacidades, operaciones, errores. `goforge.bundle-manifest.v1` son
 metadatos de release para verificar digests. El runtime valida ambos y rechaza cualquier desacuerdo.
 
 ## Versiones fijadas del toolchain
@@ -69,21 +69,21 @@ Clases de portabilidad WASM: A=140, B=171, C=75, D=331, E=174.
 
 Cuatro puertas fallan ruidosamente en vez de dejar que los dos repositorios diverjan en silencio:
 
-| Puerta                                       | Detecta                                                                   |
-| -------------------------------------------- | ------------------------------------------------------------------------- |
-| `deno task contract:check`                   | El contrato TypeScript generado está obsoleto frente al bundle de GoForge |
-| `generated_contract_test.ts`                 | La superficie pública escrita a mano no concuerda con la generada         |
-| `vectors_test.ts`                            | Los vectores compartidos copiados difieren de la copia de GoForge         |
-| `deno task inventory:check` / `matrix:check` | El inventario de API pública o la matriz de cobertura están obsoletos     |
+| Puerta                                       | Detecta                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------- |
+| `deno task contract:check`                   | El contrato TypeScript generado está obsoleto frente al bundle de forge-go |
+| `generated_contract_test.ts`                 | La superficie pública escrita a mano no concuerda con la generada          |
+| `vectors_test.ts`                            | Los vectores compartidos copiados difieren de la copia de forge-go         |
+| `deno task inventory:check` / `matrix:check` | El inventario de API pública o la matriz de cobertura están obsoletos      |
 
 Las cuatro corren en CI. El contrato generado se regenera, nunca se edita a mano.
 
 ## Pisos de cobertura
 
-- **GoForge:** sin regresión por módulo respecto de la línea base de la Fase 0 — raíz 91,0 %, logger
-  94,8 %, encrypt 89,7 %, security 91,8 %, qgo 87,6 %, go-openssl 83,9 %, portable 92,2 %. Lo aplica
-  `scripts/check-coverage.sh`.
-- **DenoForge:** ≥80 % global, aplicado por `deno task cov:check` sobre un perfil nuevo.
+- **forge-go:** sin regresión por módulo respecto de la línea base de la Fase 0 — raíz 91,0 %,
+  logger 94,8 %, encrypt 89,7 %, security 91,8 %, qgo 87,6 %, go-openssl 83,9 %, portable 92,2 %. Lo
+  aplica `scripts/check-coverage.sh`.
+- **forge-deno:** ≥80 % global, aplicado por `deno task cov:check` sobre un perfil nuevo.
 
 ## Relacionado
 
