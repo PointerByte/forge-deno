@@ -21,7 +21,7 @@ independiente.
 | `encrypt/gcp-kms`         | `@pointerbyte/denoforge/encrypt/gcp-kms`         | criptografía + ciclo de vida con Google Cloud KMS                              |
 | `logger`                  | `@pointerbyte/denoforge/logger`                  | logging por niveles con formato forge-go, sanitizador, middleware HTTP + gRPC  |
 | `security`                | `@pointerbyte/denoforge/security`                | JWT (HS256/RS256/PS256/EdDSA), auth por cookie, middleware HTTP + gRPC         |
-| `tools`                   | `@pointerbyte/denoforge/tools`                   | jobs por intervalo/cron, bucle de workers acotado, flag de modo test           |
+| `tools`                   | `@pointerbyte/denoforge/tools`                   | jobs por intervalo/cron, bucle de workers acotado, carga de configuración      |
 | `config`                  | `@pointerbyte/denoforge/config`                  | cliente REST `fetch`, servidor HTTP nativo `Deno.serve`, cliente/servidor gRPC |
 | `config/http`             | `@pointerbyte/denoforge/config/http`             | entrada HTTP enfocada sin runtime gRPC opcional                                |
 | `config/grpc`             | `@pointerbyte/denoforge/config/grpc`             | cliente/servidor gRPC, cargador proto y contratos de interceptores             |
@@ -328,6 +328,104 @@ const id = job(() => sondear(), 5000); // cada 5s
 startJobs();
 ```
 
+#### Configuración en tiempo de ejecución
+
+`loadEnv` es el port a Deno de `utilities.LoadEnv` de forge-go. Resuelve el directorio de
+configuración, mezcla todas las fuentes en un orden fijo y devuelve un `Config` para consultar.
+`getConfig()` entrega lo que produjo la última carga, así que los módulos más abajo en la cadena de
+llamadas no necesitan recibirlo por parámetro.
+
+```ts
+import { getConfig, loadEnv } from "@pointerbyte/denoforge/tools";
+import { newHttpServer } from "@pointerbyte/denoforge/config/http";
+
+const config = await loadEnv(); // o loadEnv("./cmd/example")
+
+const server = newHttpServer({
+  port: config.getNumber("server.http.port", 8080),
+  healthPath: config.getString("server.http.healthPath", "/health"),
+});
+for (const grupo of config.getStringList("server.http.groups")) server.group(grupo);
+
+getConfig().getBoolean("jwt.enable"); // la misma instancia, en cualquier lugar
+```
+
+Las fuentes se aplican en este orden, cada una sobrescribiendo a la anterior:
+
+1. `application.yml`, `application.yaml` o `application.json`
+2. `default.ini`
+3. `<app.name>.ini`
+4. los archivos listados en `env.files`
+5. variables de entorno del proceso, derivadas de la ruta de la clave (`server.http.port` lee
+   `SERVER_HTTP_PORT`)
+
+El directorio se localiza igual que en forge-go: si el directorio indicado contiene alguno de esos
+archivos se usa tal cual; si no, se busca hacia arriba el `resources/` más cercano que tenga alguno,
+de modo que un binario iniciado desde `cmd/example` sigue encontrando la configuración del proyecto.
+Las claves se consultan sin distinguir mayúsculas, y una clave que ya declaró una fuente anterior
+conserva su tipo: un overlay INI puede refinar una lista YAML sin convertirla en texto.
+
+`loadEnv` necesita `--allow-read` para el directorio de configuración. `--allow-env` es opcional:
+sin ese permiso simplemente no se aplican los overrides de entorno. Los parsers de YAML y `.env` se
+importan de forma diferida, así que una aplicación configurada con JSON e INI nunca los resuelve.
+
+#### Archivos INI
+
+La configuración también puede escribirse en INI. Dos archivos opcionales del directorio resuelto
+refinan el archivo de aplicación: `default.ini`, el overlay compartido, y `<app.name>.ini`, con el
+nombre de `app.name`. Un servicio creado como `dragon-cmk` lee entonces primero `default.ini` y
+después `dragon-cmk.ini`, así que el archivo específico del proyecto siempre gana. `APP_NAME`
+selecciona el segundo archivo cuando está definida.
+
+No hace falta un archivo de aplicación cuando el directorio se configura solo con INI: una carpeta
+`resources/` que únicamente tiene `default.ini` es un directorio de configuración válido. Un `.ini`
+ausente se ignora; uno mal formado lanza un error indicando archivo y línea, en vez de dejar la
+aplicación a medio configurar.
+
+```ini
+; resources/default.ini
+[app]
+name = dragon-cmk
+version = 0.0.1
+
+[server.http]
+port = 8080
+groups = [/api/v1, /api/v2]
+
+[server.http.rate]
+limit = 1000
+burst = 2000
+
+[logger]
+level = info
+formatter = json
+
+[traces]
+SkipPaths = /health
+SkipPaths = /metrics
+
+[jwt]
+enable = false
+algorithm = EdDSA
+```
+
+Los encabezados de sección y las claves con puntos construyen la misma ruta, así que `[server.http]`
+con `port` y `[server]` con `http.port` definen ambos `server.http.port`, y un encabezado vacío `[]`
+vuelve a la raíz. Los valores se tipan así:
+
+- una clave que una fuente anterior declara conserva su tipo, por eso `groups = /v2, /v3` sigue
+  siendo lista y `limit = 2500` sigue siendo número
+- una clave nueva se infiere: `true` y `false` pasan a booleano, los dígitos a número y el resto
+  queda como texto
+- `[a, b, c]` declara una lista de forma explícita, que es como una clave que ninguna fuente
+  anterior declara pasa a ser lista, incluidas las de un solo elemento como `SkipPaths = [/health]`
+- repetir una clave agrega a una lista, por eso `SkipPaths` arriba da dos entradas
+- entrecomillar con `"` o `'` mantiene el valor como texto y conserva sus espacios
+
+Los comentarios empiezan con `;` o `#` al inicio de una línea, o después de un espacio en un valor
+sin comillas; un marcador que no viene precedido de espacio es parte del valor, por eso
+`password = abc#123` se lee completo.
+
 ### `config`
 
 Cliente REST basado en `fetch` y servidor HTTP nativo sobre `Deno.serve` con middleware, grupos de
@@ -559,10 +657,10 @@ forge-deno/
 │   ├── auth/cookies/cookies.ts
 │   ├── middlewares/{context,headers,jwt,cookies}.ts
 │   └── mod.ts
-├── tools/                 # jobs, workers, mode
+├── tools/                 # jobs, workers, configuración, mode
 │   ├── jobs/jobs.ts
 │   ├── workers/workers.ts
-│   ├── utilities/mode.ts
+│   ├── utilities/{mode,config,ini,values}.ts
 │   └── mod.ts
 ├── config/                # bootstrap de transporte (HTTP + gRPC)
 │   ├── http/mod.ts        # entrada HTTP enfocada sin dependencias gRPC

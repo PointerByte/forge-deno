@@ -19,7 +19,7 @@ capability lives in its own module that you can import independently.
 | `encrypt/gcp-kms`         | `@pointerbyte/denoforge/encrypt/gcp-kms`         | Google Cloud KMS-backed crypto + key lifecycle                           |
 | `logger`                  | `@pointerbyte/denoforge/logger`                  | forge-go log format, sensitive-value sanitizer, HTTP + gRPC middleware   |
 | `security`                | `@pointerbyte/denoforge/security`                | JWT (HS256/RS256/PS256/EdDSA), cookie auth, security + gRPC middleware   |
-| `tools`                   | `@pointerbyte/denoforge/tools`                   | interval/cron jobs, a bounded worker loop, test-mode flag                |
+| `tools`                   | `@pointerbyte/denoforge/tools`                   | interval/cron jobs, a bounded worker loop, config loader, test-mode flag |
 | `config`                  | `@pointerbyte/denoforge/config`                  | `fetch` REST client, native `Deno.serve` HTTP server, gRPC client/server |
 | `config/http`             | `@pointerbyte/denoforge/config/http`             | focused HTTP client/server entry with no optional gRPC runtime           |
 | `config/grpc`             | `@pointerbyte/denoforge/config/grpc`             | focused gRPC client/server, proto loader and interceptor contracts       |
@@ -324,6 +324,102 @@ const id = job(() => poll(), 5000); // every 5s
 startJobs();
 ```
 
+#### Runtime configuration
+
+`loadEnv` is the Deno port of forge-go's `utilities.LoadEnv`. It resolves the configuration
+directory, merges every source in a fixed order and returns a `Config` to query. `getConfig()` hands
+back whatever the last load produced, so modules further down the call tree do not need it passed
+in.
+
+```ts
+import { getConfig, loadEnv } from "@pointerbyte/denoforge/tools";
+import { newHttpServer } from "@pointerbyte/denoforge/config/http";
+
+const config = await loadEnv(); // or loadEnv("./cmd/example")
+
+const server = newHttpServer({
+  port: config.getNumber("server.http.port", 8080),
+  healthPath: config.getString("server.http.healthPath", "/health"),
+});
+for (const group of config.getStringList("server.http.groups")) server.group(group);
+
+getConfig().getBoolean("jwt.enable"); // the same instance, anywhere
+```
+
+Sources are applied in this order, each one overriding the previous:
+
+1. `application.yml`, `application.yaml`, or `application.json`
+2. `default.ini`
+3. `<app.name>.ini`
+4. the files listed under `env.files`
+5. process environment variables, derived from the key path (`server.http.port` reads
+   `SERVER_HTTP_PORT`)
+
+The directory is found the way forge-go finds it: a directory holding one of those files is used
+as-is, otherwise the nearest `resources/` directory with one of them is looked up from the start
+path upwards, so a binary started from `cmd/example` still finds the project configuration. Key
+lookups are case-insensitive, and a key an earlier source declared keeps its type — an INI overlay
+can refine a YAML list without turning it into a string.
+
+`loadEnv` needs `--allow-read` for the configuration directory. `--allow-env` is optional: without
+it, environment overrides are simply not applied. The YAML and `.env` parsers are imported lazily,
+so an application configured through JSON and INI never resolves them.
+
+#### INI files
+
+Configuration can also be written as INI. Two optional files in the resolved directory refine the
+application file: `default.ini`, the shared overlay, and `<app.name>.ini`, named after `app.name`. A
+service created as `dragon-cmk` therefore reads `default.ini` first and `dragon-cmk.ini` second, so
+the project-specific file always wins. `APP_NAME` selects the second file when it is set.
+
+An application file is not required when a directory is configured through INI alone: a `resources/`
+directory holding only `default.ini` is a valid configuration directory. A missing `.ini` is
+ignored; a malformed one throws, naming the file and line, rather than leaving the application
+half-configured.
+
+```ini
+; resources/default.ini
+[app]
+name = dragon-cmk
+version = 0.0.1
+
+[server.http]
+port = 8080
+groups = [/api/v1, /api/v2]
+
+[server.http.rate]
+limit = 1000
+burst = 2000
+
+[logger]
+level = info
+formatter = json
+
+[traces]
+SkipPaths = /health
+SkipPaths = /metrics
+
+[jwt]
+enable = false
+algorithm = EdDSA
+```
+
+Section headers and dotted keys build the same key path, so `[server.http]` with `port` and
+`[server]` with `http.port` both set `server.http.port`, and an empty `[]` header returns to the
+root. Values are typed as follows:
+
+- a key an earlier source declares keeps its type, so `groups = /v2, /v3` stays a list and
+  `limit = 2500` stays a number
+- a new key is inferred: `true` and `false` become booleans, digits become numbers, anything else
+  stays a string
+- `[a, b, c]` declares a list explicitly, which is how a key no earlier source declares becomes a
+  list, single-element ones included, such as `SkipPaths = [/health]`
+- repeating a key appends to a list, so `SkipPaths` above yields two entries
+- quoting with `"` or `'` keeps a value a string and preserves its spaces
+
+Comments start with `;` or `#` at the beginning of a line, or after whitespace on an unquoted value;
+a marker not preceded by whitespace is part of the value, so `password = abc#123` is read in full.
+
 ### `config`
 
 A `fetch`-based REST client and a native `Deno.serve` HTTP server with middleware, route groups, a
@@ -549,10 +645,10 @@ forge-deno/
 │   ├── auth/cookies/cookies.ts
 │   ├── middlewares/{context,headers,jwt,cookies}.ts
 │   └── mod.ts
-├── tools/                 # jobs, workers, mode
+├── tools/                 # jobs, workers, configuration, mode
 │   ├── jobs/jobs.ts
 │   ├── workers/workers.ts
-│   ├── utilities/mode.ts
+│   ├── utilities/{mode,config,ini,values}.ts
 │   └── mod.ts
 ├── config/                # transport bootstrap (HTTP + gRPC)
 │   ├── http/mod.ts        # focused dependency-free HTTP entry
