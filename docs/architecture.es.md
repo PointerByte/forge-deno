@@ -11,7 +11,7 @@ importa al otro en tiempo de ejecución.
 Lo que los une es un contrato, no código compartido:
 
 ```
-forge-go-private/portable/          el núcleo Go sin dependencias: 8 operaciones, catálogo de errores, límites
+forge-go-private/share/portable/          el núcleo Go sin dependencias: 8 operaciones, catálogo de errores, límites
         │
         ├── testdata/vectors/v1.json ──► copiado a forge-deno como wasm/testdata/vectors/v1.json
         │                                (con prueba de deriva; forge-go sigue siendo el dueño)

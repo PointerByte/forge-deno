@@ -145,8 +145,8 @@ actualizarse. No edites el archivo generado; se regenera desde el manifiesto.
 **Causa:** `wasm/testdata/vectors/v1.json` ya no coincide con la copia de forge-go. forge-go es el
 dueño de esos bytes.
 
-**Arreglo:** vuelve a copiar desde `forge-go-private/portable/testdata/vectors/v1.json`. Ten en
-cuenta que `wasm/testdata` está excluido de `deno fmt` a propósito — si el formateo cambió el
+**Arreglo:** vuelve a copiar desde `forge-go-private/share/portable/testdata/vectors/v1.json`. Ten
+en cuenta que `wasm/testdata` está excluido de `deno fmt` a propósito — si el formateo cambió el
 archivo, restáuralo en vez de aceptar el reformateo.
 
 Consulta [troubleshooting.md](./troubleshooting.md) para la versión en inglés.

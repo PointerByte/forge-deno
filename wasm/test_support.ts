@@ -191,7 +191,7 @@ export function createPortableManifestJson(): string {
   });
 }
 
-/** A located production release bundle produced by `forge-go-private/component/scripts/build.sh`. */
+/** A located production release bundle produced by `forge-go-private/share/component/scripts/build.sh`. */
 export interface ProductionBundle {
   directory: URL;
   locator: { manifestPath: string; manifestSha256: string };
@@ -210,7 +210,7 @@ export async function locateProductionBundle(): Promise<ProductionBundle | undef
   const override = Deno.env.get("GOFORGE_COMPONENT_BUNDLE");
   const directory = override
     ? new URL(override.endsWith("/") ? override : `${override}/`, import.meta.url)
-    : new URL("../../forge-go-private/component/artifacts/", import.meta.url);
+    : new URL("../../forge-go-private/share/component/artifacts/", import.meta.url);
 
   let manifestBytes: Uint8Array;
   try {

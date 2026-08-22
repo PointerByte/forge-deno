@@ -40,7 +40,7 @@ interface PortableManifest {
 function bundleDirectory(): URL {
   const override = Deno.env.get("GOFORGE_COMPONENT_BUNDLE");
   if (override) return new URL(override.endsWith("/") ? override : `${override}/`, import.meta.url);
-  return new URL("../../forge-go-private/component/artifacts/", import.meta.url);
+  return new URL("../../forge-go-private/share/component/artifacts/", import.meta.url);
 }
 
 /** Extracts the exported WIT interface name so the generated module records its provenance. */

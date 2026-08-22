@@ -32,7 +32,7 @@ interface SharedVectorFile {
  */
 const sharedVectorUrl = new URL("./testdata/vectors/v1.json", import.meta.url);
 const goforgeVectorUrl = new URL(
-  "../../forge-go-private/portable/testdata/vectors/v1.json",
+  "../../forge-go-private/share/portable/testdata/vectors/v1.json",
   import.meta.url,
 );
 

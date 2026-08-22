@@ -64,8 +64,8 @@ ABI v1 contains exactly these operations:
 - `crypto.aes-gcm.encrypt` and `crypto.aes-gcm.decrypt`
 - `encoding.base64.encode` and `encoding.base64.decode`
 
-The shared test gate reads `forge-go-private/portable/testdata/vectors/v1.json` directly and proves
-byte-equivalent request envelopes and response parity for all eight operations.
+The shared test gate reads `forge-go-private/share/portable/testdata/vectors/v1.json` directly and
+proves byte-equivalent request envelopes and response parity for all eight operations.
 
 ## Two intentionally different manifests
 
@@ -150,10 +150,10 @@ outside the serialized business payload while still making them explicit and fai
 ## The production factory and its capability boundary
 
 `createGeneratedComponentFactory()` is the supported factory for bundles built by
-`forge-go-private/component/scripts/build.sh`. It executes only bytes the runtime already verified:
-the generated glue is imported from an in-memory blob built from `bundle.glueBytes`, and every core
-module is compiled from `bundle.coreModuleBytes`. Nothing is re-read from disk after its digest
-check, so a file swapped between verification and instantiation cannot run.
+`forge-go-private/share/component/scripts/build.sh`. It executes only bytes the runtime already
+verified: the generated glue is imported from an in-memory blob built from `bundle.glueBytes`, and
+every core module is compiled from `bundle.coreModuleBytes`. Nothing is re-read from disk after its
+digest check, so a file swapped between verification and instantiation cannot run.
 
 ```ts
 import {

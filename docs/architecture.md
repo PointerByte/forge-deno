@@ -11,7 +11,7 @@ imports the other at runtime.
 What binds them is a contract, not code sharing:
 
 ```
-forge-go-private/portable/          the dependency-free Go core: 8 operations, error catalog, limits
+forge-go-private/share/portable/          the dependency-free Go core: 8 operations, error catalog, limits
         │
         ├── testdata/vectors/v1.json ──► vendored into forge-deno as wasm/testdata/vectors/v1.json
         │                                (drift-tested; forge-go stays the owner)

@@ -5,7 +5,7 @@
  * True cross-runtime parity against the real GoForge WebAssembly component.
  *
  * Every other suite in this directory exercises the runtime through injected fakes. This one loads
- * the immutable release bundle built by `forge-go-private/component/scripts/build.sh`, instantiates
+ * the immutable release bundle built by `forge-go-private/share/component/scripts/build.sh`, instantiates
  * the jco-transpiled guest, and proves the Go core running inside WebAssembly returns exactly what
  * the same Go core returns natively for the shared vectors.
  *
@@ -519,7 +519,7 @@ Deno.test({
     };
     assertEquals(evidence.componentCompiler, "tinygo 0.41.1");
     assertEquals(evidence.production, true);
-    assertEquals(evidence.languageDirective, "go1.25.0");
+    assertEquals(evidence.languageDirective, "go1.26.0");
     // The WASI downgrade is an accepted, documented cost — it must stay visible
     // in the shipped evidence rather than being rounded to "0.2".
     assertEquals(evidence.wasi, "0.2.0");

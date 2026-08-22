@@ -138,7 +138,7 @@ the generated file; it is regenerated from the manifest.
 **Cause:** `wasm/testdata/vectors/v1.json` no longer matches forge-go's copy. forge-go owns those
 bytes.
 
-**Fix:** re-copy from `forge-go-private/portable/testdata/vectors/v1.json`. Note that
+**Fix:** re-copy from `forge-go-private/share/portable/testdata/vectors/v1.json`. Note that
 `wasm/testdata` is excluded from `deno fmt` on purpose — if formatting changed the file, restore it
 rather than accepting the reformat.
 

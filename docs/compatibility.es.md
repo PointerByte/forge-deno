@@ -17,21 +17,25 @@ metadatos de release para verificar digests. El runtime valida ambos y rechaza c
 
 ## Versiones fijadas del toolchain
 
-| Herramienta                 | Versión | Notas                                                                                                          |
-| --------------------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
-| Piso del lenguaje Go        | 1.25.0  | El contrato público de compatibilidad; la directiva `go` de cada módulo                                        |
-| Toolchain de compilación Go | 1.25.12 | Con parches de seguridad. El 1.25.0 exacto reporta 26 hallazgos alcanzables de stdlib; el 1.25.12 reporta cero |
-| componentize-go             | 0.4.0   | Compilador de producción actual — **afectado por el defecto de GC**                                            |
-| TinyGo                      | 0.41.1  | Compilación de comparación; reemplazo propuesto, aún no aprobado                                               |
-| wit-bindgen                 | 0.58.0  | Bindings del guest                                                                                             |
-| wasm-tools                  | 1.255.0 | Validación y extracción de WIT; verificado por checksum en CI                                                  |
-| jco                         | 1.26.1  | `--instantiation async --no-nodejs-compat --strict`                                                            |
-| WASI                        | 0.2.12  | Las compilaciones con TinyGo enlazan 0.2.0 en su lugar                                                         |
-| Deno                        | 2.9.4   | Runtime exacto de toda la evidencia publicada                                                                  |
+| Herramienta                 | Versión | Notas                                                                                             |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| Piso del lenguaje Go        | 1.26.0  | El contrato público de compatibilidad; la directiva `go` de cada módulo                           |
+| Toolchain de compilación Go | 1.26.7  | La línea de parches con la que se compilan los releases; coincide con el pin de todo el workspace |
+| componentize-go             | 0.4.0   | Compilador de producción actual — **afectado por el defecto de GC**                               |
+| TinyGo                      | 0.41.1  | Compilación de comparación; reemplazo propuesto, aún no aprobado                                  |
+| wit-bindgen                 | 0.58.0  | Bindings del guest                                                                                |
+| wasm-tools                  | 1.255.0 | Validación y extracción de WIT; verificado por checksum en CI                                     |
+| jco                         | 1.26.1  | `--instantiation async --no-nodejs-compat --strict`                                               |
+| WASI                        | 0.2.12  | Las compilaciones con TinyGo enlazan 0.2.0 en su lugar                                            |
+| Deno                        | 2.9.4   | Runtime exacto de toda la evidencia publicada                                                     |
 
 El piso del lenguaje y el compilador de compilación resuelven problemas distintos: los consumidores
-obtienen el contrato de compatibilidad Go 1.25.0, los releases obtienen las correcciones de la línea
+obtienen el contrato de compatibilidad Go 1.26.0, los releases obtienen las correcciones de la línea
 de parches soportada. Un salto de parche no mueve el piso; moverlo requiere un ADR.
+
+> El piso pasó de 1.25.0 a 1.26.0 cuando forge-go subió la directiva `go` en los 14 módulos. El ADR
+> que ese movimiento requiere aún no se ha escrito, y no se añadió directiva `toolchain` que fije la
+> línea de parches en `go.mod`. El resultado de govulncheck para 1.26.7 no se ha vuelto a medir.
 
 ## Requisitos de ejecución
 
@@ -77,6 +81,18 @@ Cuatro puertas fallan ruidosamente en vez de dejar que los dos repositorios dive
 | `deno task inventory:check` / `matrix:check` | El inventario de API pública o la matriz de cobertura están obsoletos      |
 
 Las cuatro corren en CI. El contrato generado se regenera, nunca se edita a mano.
+
+**Estado actual — dos de las cuatro no están verificando nada:**
+
+| Puerta                             | Estado                                                                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vectors_test.ts`                  | **Viva.** Compara contra `forge-go-private/share/portable/testdata/vectors/v1.json`                                                              |
+| `generated_contract_test.ts`       | **Viva.**                                                                                                                                        |
+| `contract:check`                   | **No-op** hasta que se ejecute `share/component/scripts/build.sh` — `share/component/artifacts/` es salida de build ignorada por git y no existe |
+| `inventory:check` / `matrix:check` | **Rota.** Sus entradas `go-api-inventory.json` / `deno-api-inventory.json` fueron borradas de los `openspec/` de ambos repos                     |
+
+Restaurar las dos últimas requiere regenerar la evidencia (o retirar las tareas), no un arreglo de
+rutas.
 
 ## Pisos de cobertura
 

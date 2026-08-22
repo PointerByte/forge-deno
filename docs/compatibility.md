@@ -17,21 +17,25 @@ for verifying digests. The runtime validates both and rejects any disagreement.
 
 ## Toolchain pins
 
-| Tool               | Version | Notes                                                                                     |
-| ------------------ | ------- | ----------------------------------------------------------------------------------------- |
-| Go language floor  | 1.25.0  | The public compatibility contract; every module's `go` directive                          |
-| Go build toolchain | 1.25.12 | Security-patched. Exact 1.25.0 reports 26 reachable stdlib findings; 1.25.12 reports zero |
-| componentize-go    | 0.4.0   | Current production compiler — **affected by the GC defect**                               |
-| TinyGo             | 0.41.1  | Comparison build; proposed replacement, not yet approved                                  |
-| wit-bindgen        | 0.58.0  | Guest bindings                                                                            |
-| wasm-tools         | 1.255.0 | Validation and WIT extraction; checksum-verified in CI                                    |
-| jco                | 1.26.1  | `--instantiation async --no-nodejs-compat --strict`                                       |
-| WASI               | 0.2.12  | TinyGo builds link 0.2.0 instead                                                          |
-| Deno               | 2.9.4   | Exact runtime for all published evidence                                                  |
+| Tool               | Version | Notes                                                                  |
+| ------------------ | ------- | ---------------------------------------------------------------------- |
+| Go language floor  | 1.26.0  | The public compatibility contract; every module's `go` directive       |
+| Go build toolchain | 1.26.7  | The patch line releases are built with; matches the workspace-wide pin |
+| componentize-go    | 0.4.0   | Current production compiler — **affected by the GC defect**            |
+| TinyGo             | 0.41.1  | Comparison build; proposed replacement, not yet approved               |
+| wit-bindgen        | 0.58.0  | Guest bindings                                                         |
+| wasm-tools         | 1.255.0 | Validation and WIT extraction; checksum-verified in CI                 |
+| jco                | 1.26.1  | `--instantiation async --no-nodejs-compat --strict`                    |
+| WASI               | 0.2.12  | TinyGo builds link 0.2.0 instead                                       |
+| Deno               | 2.9.4   | Exact runtime for all published evidence                               |
 
-The language floor and the build compiler solve different problems: consumers get the Go 1.25.0
+The language floor and the build compiler solve different problems: consumers get the Go 1.26.0
 compatibility contract, releases get the fixes in the supported patch line. A patch bump does not
 move the floor; moving the floor needs an ADR.
+
+> The floor moved 1.25.0 → 1.26.0 when forge-go raised the `go` directive in all 14 modules. The ADR
+> that move requires has not been written yet, and no `toolchain` directive was added to pin the
+> build patch line in `go.mod`. The govulncheck result for 1.26.7 has not been re-measured.
 
 ## Runtime requirements
 
@@ -76,6 +80,17 @@ Four gates fail loudly instead of letting the two repositories diverge silently:
 | `deno task inventory:check` / `matrix:check` | The public API inventory or coverage matrix is stale              |
 
 All four run in CI. The generated contract is regenerated, never hand-edited.
+
+**Current status — two of the four are not actually verifying anything:**
+
+| Gate                               | State                                                                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `vectors_test.ts`                  | **Live.** Compares against `forge-go-private/share/portable/testdata/vectors/v1.json`                                               |
+| `generated_contract_test.ts`       | **Live.**                                                                                                                           |
+| `contract:check`                   | **No-op** until `share/component/scripts/build.sh` is run — `share/component/artifacts/` is a gitignored build output and is absent |
+| `inventory:check` / `matrix:check` | **Broken.** Their `go-api-inventory.json` / `deno-api-inventory.json` inputs were deleted from both repos' `openspec/` trees        |
+
+Restoring the last two needs the evidence regenerated (or the tasks retired), not a path fix.
 
 ## Coverage floors
 

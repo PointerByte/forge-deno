@@ -64,8 +64,8 @@ ABI v1 contiene exactamente estas operaciones:
 - `crypto.aes-gcm.encrypt` y `crypto.aes-gcm.decrypt`
 - `encoding.base64.encode` y `encoding.base64.decode`
 
-El gate compartido lee directamente `forge-go-private/portable/testdata/vectors/v1.json` y demuestra
-envelopes byte a byte equivalentes y paridad de respuestas para las ocho operaciones.
+El gate compartido lee directamente `forge-go-private/share/portable/testdata/vectors/v1.json` y
+demuestra envelopes byte a byte equivalentes y paridad de respuestas para las ocho operaciones.
 
 ## Dos manifiestos intencionalmente distintos
 
@@ -150,9 +150,9 @@ explícitos y fallan de forma cerrada.
 ## La factoría de producción y su frontera de capacidades
 
 `createGeneratedComponentFactory()` es la factoría admitida para los paquetes construidos por
-`forge-go-private/component/scripts/build.sh`. Solo ejecuta bytes que el runtime ya verificó: el
-glue generado se importa desde un blob en memoria construido con `bundle.glueBytes`, y cada módulo
-core se compila desde `bundle.coreModuleBytes`. Nada se vuelve a leer del disco después de su
+`forge-go-private/share/component/scripts/build.sh`. Solo ejecuta bytes que el runtime ya verificó:
+el glue generado se importa desde un blob en memoria construido con `bundle.glueBytes`, y cada
+módulo core se compila desde `bundle.coreModuleBytes`. Nada se vuelve a leer del disco después de su
 comprobación de digest, así que un archivo sustituido entre la verificación y la instanciación no
 puede ejecutarse.
 
