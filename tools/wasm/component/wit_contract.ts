@@ -22,7 +22,7 @@
  * @module
  */
 
-const GENERATED_PATH = new URL("../wasm/generated/goforge-contract.ts", import.meta.url);
+const GENERATED_PATH = new URL("../../../wasm/generated/goforge-contract.ts", import.meta.url);
 
 interface PortableManifest {
   schema: string;
@@ -40,7 +40,7 @@ interface PortableManifest {
 function bundleDirectory(): URL {
   const override = Deno.env.get("GOFORGE_COMPONENT_BUNDLE");
   if (override) return new URL(override.endsWith("/") ? override : `${override}/`, import.meta.url);
-  return new URL("../../forge-go-private/share/component/artifacts/", import.meta.url);
+  return new URL("../../../../forge-go-private/share/component/artifacts/", import.meta.url);
 }
 
 /** Extracts the exported WIT interface name so the generated module records its provenance. */
@@ -82,7 +82,7 @@ function render(manifest: PortableManifest, wit: string): string {
 // SPDX-License-Identifier: Apache-2.0
 //
 // GENERATED FILE — DO NOT EDIT.
-// Produced by tools/wit_contract.ts from the GoForge release bundle:
+// Produced by tools/wasm/component/wit_contract.ts from the GoForge release bundle:
 //   ${manifest.schema} / ${manifest.package}@${manifest.version} / ${manifest.abi}
 //   WIT export: ${witInterface(wit)}
 // Regenerate with \`deno task contract\`; \`deno task contract:check\` fails when this is stale.

@@ -11,8 +11,8 @@ There is **no** OpenTelemetry implementation in this repository.
 - No `@opentelemetry/*` entry in `deno.json` `imports`, none in `deno.lock`.
 - No tracer, meter, logger provider, exporter, resource, or sampler anywhere.
 - No `telemetry` export in `deno.json`.
-- `tools/compatibility_matrix.ts` labels the `./logger` module "Logger / OpenTelemetry", which
-  overstates what exists.
+- `tools/wasm/component/compatibility_matrix.ts` labels the `./logger` module "Logger /
+  OpenTelemetry", which overstates what exists.
 - `docs/architecture.md` mentions OpenTelemetry only to classify it as a _host adapter_ that must
   stay outside the portable core.
 

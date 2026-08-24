@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // GENERATED FILE — DO NOT EDIT.
-// Produced by tools/wit_contract.ts from the GoForge release bundle:
+// Produced by tools/wasm/component/wit_contract.ts from the GoForge release bundle:
 //   goforge.manifest.v1 / pointerbyte:goforge@0.1.0 / goforge.abi.v1
 //   WIT export: pointerbyte:goforge/operations@0.1.0
 // Regenerate with `deno task contract`; `deno task contract:check` fails when this is stale.

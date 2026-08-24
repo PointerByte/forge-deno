@@ -6,7 +6,7 @@ normalizes its JSON documentation graph into deterministic JSON and Markdown cat
 From the repository root:
 
 ```bash
-SOURCE_DATE_EPOCH=1785628800 deno run -A tools/api_inventory.ts \
+SOURCE_DATE_EPOCH=1785628800 deno run -A tools/wasm/component/api_inventory.ts \
   --json openspec/changes/tinygo-wasip2-goforge-integration/research/evidence/deno-api-inventory.json \
   --markdown openspec/changes/tinygo-wasip2-goforge-integration/research/evidence/deno-api-inventory.md
 ```
