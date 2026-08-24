@@ -1,6 +1,6 @@
 {
   "name": "@pointerbyte/forge-deno",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Deno port of forge-go: modular crypto, logging, security, jobs/workers and HTTP tooling.",
   "license": "Apache-2.0",
   "exports": {
