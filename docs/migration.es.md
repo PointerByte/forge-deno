@@ -48,6 +48,28 @@ import { … } from "@pointerbyte/denoforge/wasm";
 Los nombres Go heredados mal escritos se conservan del lado de Go y se **corrigen** en los contratos
 ABI generados. Si migras contra la ABI y no contra el código Go, espera la ortografía corregida.
 
+Los constructores se renombran por la misma razón: el `pkcs11.NewRepository` de Go aquí es
+`newPkcs11Provider`, `awskms.NewRepository` es `newAwsKmsProvider`, etc. El comparador que hay
+detrás de la matriz de cobertura no puede equipararlos, así que todo constructor de backend aparece
+como excepción documentada apuntando a su entrypoint y no a un símbolo.
+
+### Backends sin equivalente Go que traducir del lado Deno
+
+`encrypt/pkcs11` es el más reciente: forge-go lo protege con el build tag `pkcs11` y cgo, forge-deno
+con el permiso `--allow-ffi` y `Deno.dlopen`. Los métodos del repositorio, el formato de URI de
+clave RFC 7512, la regla de rechazo de mecanismos y la semántica de rotación y desactivación son las
+mismas. Dos cosas difieren, ambas porque difiere el runtime que las rodea:
+
+- **La configuración.** forge-go lee `encrypt.vault.pkcs11.*` desde viper y admite opciones
+  funcionales encima. Los backends de Deno solo toman opciones —la misma decisión que ya toma
+  `aws-kms`—, así que las claves de viper se corresponden con `modulePath`, `tokenLabel`, `slotId`,
+  `keyUri` y `maxSessions`. El PIN no tiene clave en ninguno de los dos lados y siempre es una
+  función.
+- **El enrutado.** forge-go decide entre token y local intentando parsear la referencia como
+  material de clave; forge-deno decide solo por el esquema `pkcs11:`. El resultado es el mismo para
+  cualquier entrada bien formada, y la regla de Deno no se deja engañar por material que resulte
+  parseable.
+
 ## Paso 3: si usas el componente, conecta el bundle
 
 El bundle no está en el paquete JSR. Constrúyelo y apunta el runtime hacia él:

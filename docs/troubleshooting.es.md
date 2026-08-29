@@ -2,8 +2,9 @@
 
 Fallos concretos de la integración con forge-go, qué los causa realmente y qué hacer.
 
-Todo fallo del runtime es una subclase de `WasmRuntimeError`, así que la clase te dice qué capa
-falló antes de leer el mensaje.
+Todo fallo del runtime del componente es una subclase de `WasmRuntimeError`, así que la clase te
+dice qué capa falló antes de leer el mensaje. Las entradas de PKCS#11 del final siguen la misma
+convención con `Pkcs11Error`.
 
 ## `RangeError: Maximum call stack size exceeded` bajo carga sostenida
 
@@ -139,6 +140,65 @@ forge-go — llegó un cambio de contrato aguas arriba.
 **Arreglo:** `deno task contract` y luego ejecuta la suite. `generated_contract_test.ts` nombrará la
 deriva exacta si la superficie escrita a mano en `contracts.ts` / `codec.ts` también necesita
 actualizarse. No edites el archivo generado; se regenera desde el manifiesto.
+
+## PKCS#11: `Pkcs11UnavailableError`
+
+**Causa:** el proceso no puede cargar la librería del fabricante. O no se concedió `--allow-ffi`, o
+el runtime no tiene `Deno.dlopen` (Deno Deploy), o la ruta no resuelve, o el módulo no exporta
+`C_GetFunctionList`.
+
+**Comprueba:** ejecuta con `--allow-ffi` y acceso de lectura a la ruta de la librería, y confirma
+que la ruta apunta al módulo PKCS#11 y no a un script envoltorio. En Windows el binding se niega por
+diseño: su Cryptoki usa un `CK_ULONG` de 4 bytes que este port no codifica.
+
+## PKCS#11: `Pkcs11UnsupportedMechanismError`
+
+**Causa:** el token no anunció en `C_GetMechanismList` un mecanismo que la operación necesita.
+
+**Comprueba:** esto no es un fallo que haya que sortear. Se pidió que la operación ocurriera en
+hardware y el hardware no puede hacerla — completarla en software anularía esa garantía. O
+aprovisiona la clave en un token que implemente el mecanismo, o pasa material de clave local en vez
+de una URI `pkcs11:` para que la llamada sea honestamente local. `pkcs11-tool --list-mechanisms`
+muestra lo que ofrece un token.
+
+## PKCS#11: `Pkcs11OaepHashUnsupportedError`
+
+**Causa:** el token anuncia `CKM_RSA_PKCS_OAEP` pero rechaza los parámetros SHA-256. SoftHSM2 es el
+caso habitual; fija OAEP a SHA-1.
+
+**Comprueba:** los parámetros no son negociables a propósito — todos los demás backends cifran
+RSA-OAEP con SHA-256 y MGF1-SHA256, así que una degradación del lado del token produciría ciphertext
+que el proveedor local no puede leer. Usa un token que implemente OAEP con SHA-256, o mantén
+RSA-OAEP fuera de ese token.
+
+## PKCS#11: `Pkcs11SecretNotExtractableError`
+
+**Causa:** un descifrado ECDH necesitó el secreto compartido derivado en software —porque el token
+no tiene `CKM_HKDF_DERIVE`— y o bien `allowSecretExtraction` es false, o bien el token se negó a
+entregarlo.
+
+**Comprueba:** lo que sale del token por esa vía es un secreto efímero por mensaje, nunca material
+de clave a largo plazo, y es lo que los backends de AWS y Azure ya hacen. Si tu política lo permite,
+deja `allowSecretExtraction` en su valor por defecto. Si no, ECDH necesita un token PKCS#11 v3.0 con
+HKDF.
+
+## PKCS#11: `Pkcs11KeyNotFoundError`
+
+**Causa:** ningún objeto del token coincide con la URI.
+
+**Comprueba:** el `object` de la URI se compara con `CKA_LABEL` y el `id` con `CKA_ID`, y un
+atributo `type` restringe la búsqueda a esa clase de objeto — así que `type=private` no encontrará
+una clave pública. Quita `type` para buscar en todas las clases. Recuerda que la sesión inicia
+sesión como usuario: los objetos privados son invisibles para un token que no ha aceptado el PIN.
+
+## PKCS#11: el HMAC falla con una clave creada por `generateSymmetricKeys`
+
+**Causa:** `CKM_SHA256_HMAC` necesita una clave `CKK_GENERIC_SECRET` con `CKA_SIGN`.
+`generateSymmetricKeys` crea una clave `CKK_AES` para `encryptAES`, y la mayoría de tokens se niegan
+a hacer MAC con ella.
+
+**Comprueba:** aprovisiona las claves HMAC aparte, igual que el backend de AWS necesita una clave
+HMAC de KMS y no una de cifrado. `integration_test.ts` muestra la plantilla.
 
 ## Falla la prueba de deriva de los vectores copiados
 

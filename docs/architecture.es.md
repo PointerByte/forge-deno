@@ -42,6 +42,29 @@ El componente es 23–966× más lento que Deno nativo con el mismo envelope, y 
 es el envelope JSON + Base64, no la criptografía. **El valor del componente es la fidelidad de
 contrato, no la velocidad.**
 
+### Los dominios nativos no son todos sin permisos
+
+La mayoría de dominios nativos no necesitan permiso alguno — el proveedor local de `encrypt` es Web
+Crypto, `logger` formatea cadenas. Dos grupos son distintos, y esa diferencia es justo lo que los
+mantiene fuera de la ruta del componente:
+
+- los proveedores de cloud KMS (`encrypt/aws-kms`, `encrypt/azure-key-vault`, `encrypt/gcp-kms`)
+  alcanzan un endpoint de red;
+- `encrypt/pkcs11` carga la librería PKCS#11 del fabricante con `Deno.dlopen`, así que necesita
+  `--allow-ffi` y acceso de lectura a ese archivo.
+
+Un componente WebAssembly no puede abrir una librería compartida ni un socket, y los imports WASI
+denegados que se describen más abajo lo rechazarían si lo intentara. Por eso estos dominios
+conservan una mitad portable —empaquetado del payload, derivación de claves, manejo de URI y DER—
+junto a una mitad que solo corre en el host, que es lo que la matriz de cobertura registra como
+clase E («componente híbrido y adaptador nativo»). Se alcanzan por sus propios especificadores de
+import, nunca por `runtime.invoke`.
+
+La verificación ocurre en el primer uso y no al construir, así que un proceso que nunca toca un
+token nunca necesita el permiso: `newPkcs11Provider()` es inerte hasta que se ejecuta una operación,
+y entonces lanza `Pkcs11UnavailableError` si la FFI no está disponible. forge-go traza la misma
+línea en tiempo de compilación con su build tag `pkcs11` y `ErrUnavailable`.
+
 ### Por qué el enrutamiento es explícito
 
 Un fallo del componente nunca selecciona un adaptador nativo automáticamente. Esa regla existe

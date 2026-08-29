@@ -47,6 +47,13 @@ de parches soportada. Un salto de parche no mueve el piso; moverlo requiere un A
 - **El bundle de release no está en el paquete JSR.** Se distribuye aparte y se localiza mediante el
   lector inyectado, con `GOFORGE_COMPONENT_BUNDLE` sobrescribiendo la ruta por defecto al
   repositorio hermano.
+- **Los dominios respaldados por un proveedor traen sus propios permisos.** Los de cloud KMS
+  necesitan `--allow-net`; `encrypt/pkcs11` necesita `--allow-ffi` más acceso de lectura a la
+  librería del fabricante. Ambos se comprueban en el primer uso, así que importarlos no cuesta nada.
+- **PKCS#11 asume una Cryptoki LP64.** `CK_ULONG` se toma como 8 bytes little-endian, que es la
+  disposición de Linux y macOS y la que también asume la codificación de atributos de forge-go. El
+  binding se niega a cargar en Windows, donde `CK_ULONG` ocupa 4 bytes, en vez de corromper cada
+  plantilla que escribe.
 
 ## Representación de la API
 
@@ -59,6 +66,11 @@ semántica solo está probada donde existen vectores compartidos — actualmente
 portables, verificadas byte a byte entre Go nativo, Go en WebAssembly y el adaptador nativo de Deno.
 
 Clases de portabilidad WASM: A=140, B=171, C=75, D=331, E=174.
+
+> Estos recuentos son anteriores al paquete `encrypt/pkcs11` de forge-go y están desactualizados por
+> su superficie pública. La regla de clasificación sí está al día —`PKCS#11 HSM` es su propio módulo
+> en la matriz y cae en la clase E junto a los backends de cloud KMS— pero los totales de arriba
+> solo se refrescan al regenerar `deno task matrix` contra un inventario de forge-go que lo incluya.
 
 ## Reglas de compatibilidad hacia atrás
 

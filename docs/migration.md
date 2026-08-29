@@ -48,6 +48,26 @@ Legacy misspelled Go names are preserved on the Go side and **corrected** in the
 contracts. If you are migrating against the ABI rather than against Go source, expect the corrected
 spelling.
 
+Constructors are renamed for the same reason: Go's `pkcs11.NewRepository` is `newPkcs11Provider`
+here, `awskms.NewRepository` is `newAwsKmsProvider`, and so on. The matcher behind the coverage
+matrix cannot equate those, so every backend constructor shows up as a documented exception pointing
+at its entrypoint rather than at a symbol.
+
+### Backends with no Deno-side Go equivalent to translate
+
+`encrypt/pkcs11` is the newest: forge-go gates it behind the `pkcs11` build tag and cgo, forge-deno
+behind the `--allow-ffi` permission and `Deno.dlopen`. The repository methods, the RFC 7512 key URI
+format, the mechanism-refusal rule and the rotation and deactivation semantics are the same. Two
+things differ, both because the surrounding runtime differs:
+
+- **Configuration.** forge-go reads `encrypt.vault.pkcs11.*` from viper and takes functional options
+  on top. The Deno backends take options only — the same choice `aws-kms` already makes — so the
+  viper keys map to `modulePath`, `tokenLabel`, `slotId`, `keyUri` and `maxSessions`. The PIN has no
+  key on either side and is always a function.
+- **Routing.** forge-go decides between token and local by trying to parse the reference as key
+  material; forge-deno decides on the `pkcs11:` scheme alone. The outcome is the same for every
+  well-formed input, and the Deno rule cannot be fooled by material that happens to parse.
+
 ## Step 3: if you use the component, wire the bundle
 
 The bundle is not in the JSR package. Build it and point the runtime at it:

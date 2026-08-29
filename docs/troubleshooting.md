@@ -2,8 +2,9 @@
 
 Concrete failures from the forge-go integration, what actually causes them, and what to do.
 
-Every runtime failure is a subclass of `WasmRuntimeError`, so the class tells you which layer failed
-before you read the message.
+Every runtime failure of the component is a subclass of `WasmRuntimeError`, so the class tells you
+which layer failed before you read the message. The PKCS#11 entries near the end follow the same
+convention with `Pkcs11Error`.
 
 ## `RangeError: Maximum call stack size exceeded` under sustained load
 
@@ -132,6 +133,61 @@ contract change landed upstream.
 **Fix:** `deno task contract`, then run the suite. `generated_contract_test.ts` will name the exact
 drift if the hand-written surface in `contracts.ts` / `codec.ts` also needs updating. Do not edit
 the generated file; it is regenerated from the manifest.
+
+## PKCS#11: `Pkcs11UnavailableError`
+
+**Cause:** the process cannot load the vendor library. Either `--allow-ffi` was not granted, the
+runtime has no `Deno.dlopen` (Deno Deploy), the path does not resolve, or the module does not export
+`C_GetFunctionList`.
+
+**Check:** run with `--allow-ffi` and read access to the library path, and confirm the path is the
+PKCS#11 module itself rather than a wrapper script. On Windows the binding refuses by design: its
+Cryptoki uses a 4-byte `CK_ULONG` this port does not encode.
+
+## PKCS#11: `Pkcs11UnsupportedMechanismError`
+
+**Cause:** the token did not advertise a mechanism the operation needs in `C_GetMechanismList`.
+
+**Check:** this is not a bug to work around. The operation was asked to happen in hardware, and the
+hardware cannot do it — completing it in software would void that guarantee. Either provision the
+key on a token that implements the mechanism, or pass local key material instead of a `pkcs11:` URI
+so the call is honestly a local one. `pkcs11-tool --list-mechanisms` shows what a token offers.
+
+## PKCS#11: `Pkcs11OaepHashUnsupportedError`
+
+**Cause:** the token advertises `CKM_RSA_PKCS_OAEP` but rejects SHA-256 parameters. SoftHSM2 is the
+common case; it hardcodes OAEP to SHA-1.
+
+**Check:** the parameters are deliberately not negotiable — every other backend encrypts RSA-OAEP
+with SHA-256 and MGF1-SHA256, so a token-side downgrade would produce ciphertext the local provider
+cannot read. Use a token that implements SHA-256 OAEP, or keep RSA-OAEP off that token.
+
+## PKCS#11: `Pkcs11SecretNotExtractableError`
+
+**Cause:** an ECDH decrypt needed the derived shared secret in software — because the token has no
+`CKM_HKDF_DERIVE` — and either `allowSecretExtraction` is false or the token refused to release it.
+
+**Check:** what leaves the token on that path is an ephemeral per-message secret, never long-term
+key material, and it is what the AWS and Azure backends already do. If your policy allows it, leave
+`allowSecretExtraction` at its default. If it does not, ECDH needs a PKCS#11 v3.0 token with HKDF.
+
+## PKCS#11: `Pkcs11KeyNotFoundError`
+
+**Cause:** no object on the token matches the URI.
+
+**Check:** the URI's `object` is matched against `CKA_LABEL` and `id` against `CKA_ID`, and a `type`
+attribute narrows the search to that object class — so `type=private` will not find a public key.
+Drop `type` to search every class. Remember that the session logs in as the user: private objects
+are invisible to a token that has not accepted the PIN.
+
+## PKCS#11: HMAC fails on a key `generateSymmetricKeys` created
+
+**Cause:** `CKM_SHA256_HMAC` needs a `CKK_GENERIC_SECRET` key carrying `CKA_SIGN`.
+`generateSymmetricKeys` creates a `CKK_AES` key for `encryptAES`, and most tokens refuse to MAC with
+it.
+
+**Check:** provision HMAC keys separately, the same way the AWS backend needs a KMS HMAC key rather
+than an encryption key. `integration_test.ts` shows the template.
 
 ## The vendored vectors drift test fails
 

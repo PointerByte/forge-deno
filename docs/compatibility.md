@@ -47,6 +47,13 @@ move the floor; moving the floor needs an ADR.
 - **The release bundle is not in the JSR package.** It is distributed separately and located through
   the injected reader, with `GOFORGE_COMPONENT_BUNDLE` overriding the default sibling-repository
   path.
+- **Provider-backed domains carry their own permissions.** The cloud KMS providers need
+  `--allow-net`; `encrypt/pkcs11` needs `--allow-ffi` plus read access to the vendor library. Both
+  are checked at first use, so importing them costs nothing.
+- **PKCS#11 assumes an LP64 Cryptoki.** `CK_ULONG` is taken to be 8 bytes little-endian, which is
+  the Linux and macOS layout and the one forge-go's attribute encoding also assumes. The binding
+  refuses to load on Windows, where `CK_ULONG` is 4 bytes, rather than corrupting every template it
+  writes.
 
 ## API representation
 
@@ -58,6 +65,11 @@ where shared vectors exist — currently the eight portable operations, which ar
 verified across Go native, Go in WebAssembly, and the native Deno adapter.
 
 WASM portability classes: A=140, B=171, C=75, D=331, E=174.
+
+> These counts predate forge-go's `encrypt/pkcs11` package and are stale by its public surface. The
+> classification rule is current — `PKCS#11 HSM` is its own module in the matrix and lands in class
+> E alongside the cloud KMS backends — but the totals above are only refreshed when
+> `deno task matrix` is regenerated against a forge-go inventory that includes it.
 
 ## Backward compatibility rules
 

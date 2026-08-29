@@ -41,6 +41,28 @@ The component is 23–966× slower than native Deno on the same envelope, and th
 envelope — not the cryptography — dominates that cost. **The component's value is contract fidelity,
 not speed.**
 
+### Native domains are not all permissionless
+
+Most native domains need no permissions at all — `encrypt`'s local provider is Web Crypto, `logger`
+formats strings. Two groups are different, and the difference is what keeps them off the component
+path:
+
+- the cloud KMS providers (`encrypt/aws-kms`, `encrypt/azure-key-vault`, `encrypt/gcp-kms`) reach a
+  network endpoint;
+- `encrypt/pkcs11` loads the vendor's PKCS#11 library through `Deno.dlopen`, so it needs
+  `--allow-ffi` and read access to that file.
+
+A WebAssembly component cannot open a shared library or a socket, and the denied WASI imports below
+would refuse if it tried. These domains therefore keep a portable half — payload framing, key
+derivation, URI and DER handling — beside a half that only runs on the host, which is what the
+coverage matrix records as class E ("hybrid component and native adapter"). They are reached through
+their own import specifiers, never through `runtime.invoke`.
+
+The gate is checked at first use rather than at construction, so a process that never touches a
+token never needs the permission: `newPkcs11Provider()` is inert until an operation runs, and then
+raises `Pkcs11UnavailableError` when FFI is unavailable. forge-go draws the same line at compile
+time with its `pkcs11` build tag and `ErrUnavailable`.
+
 ### Why routing is explicit
 
 A component failure never selects a native adapter automatically. That rule exists because the

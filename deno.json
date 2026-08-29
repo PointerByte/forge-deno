@@ -1,6 +1,6 @@
 {
   "name": "@pointerbyte/forge-deno",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Deno port of forge-go: modular crypto, logging, security, jobs/workers and HTTP tooling.",
   "license": "Apache-2.0",
   "exports": {
@@ -9,6 +9,7 @@
     "./encrypt/aws-kms": "./encrypt/aws-kms/mod.ts",
     "./encrypt/azure-key-vault": "./encrypt/azure-key-vault/mod.ts",
     "./encrypt/gcp-kms": "./encrypt/gcp-kms/mod.ts",
+    "./encrypt/pkcs11": "./encrypt/pkcs11/mod.ts",
     "./logger": "./logger/mod.ts",
     "./security": "./security/mod.ts",
     "./tools": "./tools/mod.ts",
@@ -38,6 +39,7 @@
       "tools/check_docs.ts",
       "tools/wasm/component/compatibility_matrix.ts",
       "tools/wasm/component/wit_contract.ts",
+      "encrypt/pkcs11/test_support.ts",
       "wasm/test_support.ts",
       "push.txt"
     ]
@@ -63,7 +65,7 @@
     "protobufjs": "npm:protobufjs@7.6.5"
   },
   "tasks": {
-    "check": "deno check mod.ts encrypt/aws-kms/mod.ts encrypt/azure-key-vault/mod.ts encrypt/gcp-kms/mod.ts config/http/mod.ts config/grpc/mod.ts wasm/mod.ts tools/check_config_references.ts tools/check_dependency_isolation.ts tools/check_coverage.ts tools/check_docs.ts tools/wasm/component/api_inventory.ts tools/wasm/component/check_api_inventory.ts tools/wasm/component/compatibility_matrix.ts tools/wasm/component/wit_contract.ts benchmarks/*.ts examples/*.ts cmd/qdeno/main.ts cmd/deno-openssl/main.ts cmd/example/main.ts",
+    "check": "deno check mod.ts encrypt/aws-kms/mod.ts encrypt/azure-key-vault/mod.ts encrypt/gcp-kms/mod.ts encrypt/pkcs11/mod.ts config/http/mod.ts config/grpc/mod.ts wasm/mod.ts tools/check_config_references.ts tools/check_dependency_isolation.ts tools/check_coverage.ts tools/check_docs.ts tools/wasm/component/api_inventory.ts tools/wasm/component/check_api_inventory.ts tools/wasm/component/compatibility_matrix.ts tools/wasm/component/wit_contract.ts benchmarks/*.ts examples/*.ts cmd/qdeno/main.ts cmd/deno-openssl/main.ts cmd/example/main.ts",
     "check:config": "deno run --allow-read=. tools/check_config_references.ts",
     "check:deps": "deno run --allow-run=deno tools/check_dependency_isolation.ts",
     "inventory": "deno run -A tools/wasm/component/api_inventory.ts --generated-at 2026-08-02T00:00:00Z --json openspec/changes/tinygo-wasip2-goforge-integration/research/evidence/deno-api-inventory.json --markdown openspec/changes/tinygo-wasip2-goforge-integration/research/evidence/deno-api-inventory.md",

@@ -19,6 +19,7 @@ independiente.
 | `encrypt/aws-kms`         | `@pointerbyte/denoforge/encrypt/aws-kms`         | cifrado/firma + ciclo de vida de claves con AWS KMS                            |
 | `encrypt/azure-key-vault` | `@pointerbyte/denoforge/encrypt/azure-key-vault` | criptografía + ciclo de vida con Azure Key Vault                               |
 | `encrypt/gcp-kms`         | `@pointerbyte/denoforge/encrypt/gcp-kms`         | criptografía + ciclo de vida con Google Cloud KMS                              |
+| `encrypt/pkcs11`          | `@pointerbyte/denoforge/encrypt/pkcs11`          | criptografía PKCS#11 (HSM hardware/red) por FFI + ciclo de vida de claves      |
 | `logger`                  | `@pointerbyte/denoforge/logger`                  | logging por niveles con formato forge-go, sanitizador, middleware HTTP + gRPC  |
 | `security`                | `@pointerbyte/denoforge/security`                | JWT (HS256/RS256/PS256/EdDSA), auth por cookie, middleware HTTP + gRPC         |
 | `tools`                   | `@pointerbyte/denoforge/tools`                   | jobs por intervalo/cron, bucle de workers acotado, carga de configuración      |
@@ -151,6 +152,84 @@ const ok = await kms.verify({ keyId: "alias/signing", message: "payload", signat
 Los tres aceptan un `api` inyectado (la interfaz `KmsApi`) para poder probar la lógica del proveedor
 sin acceso a la nube. Paquetes peer requeridos: `@aws-sdk/client-kms`, `@azure/keyvault-keys` (+
 `@azure/identity`), `@google-cloud/kms`.
+
+#### PKCS#11 (HSM hardware y de red)
+
+`encrypt/pkcs11` habla con un token a través de la librería PKCS#11 del fabricante. A diferencia de
+los backends de nube, implementa **los mismos repositorios que el proveedor local**, así que encaja
+en los mismos puntos de llamada, y enruta cada operación por la referencia de clave: una URI RFC
+7512 `pkcs11:` direcciona un objeto del token, cualquier otra cosa es material de clave en Base64
+que se procesa localmente.
+
+Cargar la librería del fabricante necesita `Deno.dlopen`, así que el proceso debe arrancar con
+`--allow-ffi`. No se carga nada al construir el proveedor: la primera operación lanza
+`Pkcs11UnavailableError` cuando la FFI no está disponible. (forge-go traza la misma línea con su
+build tag `pkcs11` y `ErrUnavailable`.)
+
+```ts
+import { newPkcs11Provider } from "@pointerbyte/denoforge/encrypt/pkcs11";
+
+const hsm = newPkcs11Provider({
+  modulePath: "/usr/lib64/pkcs11/libsofthsm2.so",
+  tokenLabel: "forge-hsm",
+  pin: () => Deno.readTextFile("/run/secrets/hsm-pin"), // nunca un valor de configuración
+});
+
+const key = await hsm.generateRSAKeys({ size: SizeAsymmetricKey.Key2048Bits });
+const signature = await hsm.signRSAPSS(key.keyRef, "payload"); // la clave privada no sale del token
+await hsm.verifyRSAPSS(key.keyRef, "payload", signature);
+
+await hsm.close(); // libera las sesiones de este proceso
+```
+
+Comportamientos que conviene conocer antes de desplegar:
+
+- Las claves privadas y secretas generadas llevan `CKA_SENSITIVE=true` y `CKA_EXTRACTABLE=false`; no
+  se pueden leer fuera del token.
+- Cuando el token no anuncia un mecanismo que la operación necesita, la operación **falla**. Nunca
+  se completa en software de forma silenciosa, lo que anularía la garantía de que el trabajo ocurrió
+  en hardware. Solo se ejecuta en local cuando quien llama pasa material de clave local en vez de
+  una URI.
+- `rotateKey` sintetiza la rotación, porque PKCS#11 no la tiene: genera una clave equivalente con un
+  `CKA_ID` nuevo y devuelve un `keyRef` nuevo. La clave anterior sigue siendo usable salvo que se
+  active `rotateDisablesPrevious`.
+- `deactivateKey` limpia los atributos de uso del objeto. En la mayoría de tokens es irreversible, a
+  diferencia del desactivado reversible que ofrecen los backends de nube.
+- `ecdhDecode` mantiene el secreto compartido dentro del token cuando implementa `CKM_HKDF_DERIVE`.
+  Si no, el secreto efímero se extrae y la derivación termina localmente, igual que ya hacen los
+  backends de AWS y Azure; usa `allowSecretExtraction: false` para que falle en su lugar.
+- `hmac` necesita una clave `CKK_GENERIC_SECRET` con `CKA_SIGN`. `generateSymmetricKeys` crea una
+  clave `CKK_AES` para `encryptAES`, y la mayoría de tokens se niegan a hacer MAC con ella, así que
+  las claves HMAC se aprovisionan aparte — igual que el backend de AWS necesita una clave HMAC de
+  KMS y no una de cifrado.
+- `rsaOaepDecode` está fijado a SHA-256 con MGF1-SHA256 para que el ciphertext siga siendo legible
+  por los demás backends. Un token que solo ofrece OAEP con SHA-1 —SoftHSM2 lo hace— lanza
+  `Pkcs11OaepHashUnsupportedError` en vez de debilitar los parámetros en silencio.
+
+La configuración se pasa como opciones; forge-go lee los mismos ajustes desde viper. El mapeo:
+
+| clave viper de forge-go             | opción de forge-deno |
+| ----------------------------------- | -------------------- |
+| `encrypt.vault.pkcs11.module-path`  | `modulePath`         |
+| `encrypt.vault.pkcs11.token-label`  | `tokenLabel`         |
+| `encrypt.vault.pkcs11.slot-id`      | `slotId`             |
+| `encrypt.vault.pkcs11.key-uri`      | `keyUri`             |
+| `encrypt.vault.pkcs11.max-sessions` | `maxSessions`        |
+| _(deliberadamente ninguna)_         | `pin`                |
+
+No hay clave de configuración para el PIN en ninguno de los dos repositorios: se suministra con la
+función `pin` para que nunca acabe en `application.yml`, en un volcado del entorno del proceso ni en
+un log.
+
+El proveedor acepta un `module` inyectado (la interfaz `Pkcs11Module`) para poder probar su lógica
+de enrutado y política sin hardware. Los tests de integración se ejecutan contra un token real
+cuando `FORGE_PKCS11_MODULE` y `FORGE_PKCS11_PIN` están definidos:
+
+```bash
+softhsm2-util --init-token --free --label forge-hsm --pin 1234 --so-pin 1234
+FORGE_PKCS11_MODULE=/usr/lib64/pkcs11/libsofthsm2.so FORGE_PKCS11_PIN=1234 \
+  deno test -A encrypt/pkcs11/integration_test.ts
+```
 
 ### `logger`
 
@@ -624,7 +703,11 @@ frozen antes de ejecutar esos gates.
   `@noble/hashes`). Todo lo demás usa `crypto.subtle` de la plataforma.
 - **La gestión de claves** (`rotateKey`, `getKey`, `deactivateKey`) depende del proveedor: el local
   lanza `UnsupportedOperationError`, mientras que `aws-kms`, `azure-key-vault` y `gcp-kms` la
-  implementan contra su KMS en la nube.
+  implementan contra su KMS en la nube y `pkcs11` contra el token.
+- **Los permisos**: todos los módulos funcionan sin permisos salvo los respaldados por un proveedor.
+  Los de cloud KMS necesitan `--allow-net` (y lo que su SDK lea para las credenciales);
+  `encrypt/pkcs11` necesita `--allow-ffi` para cargar la librería del fabricante, más `--allow-read`
+  sobre esa ruta.
 - **La cancelación** se expresa con `AbortSignal` (el campo `signal` en las peticiones / el
   argumento `signal` en los helpers).
 
@@ -634,7 +717,7 @@ frozen antes de ejecutar esos gates.
 forge-deno/
 ├── deno.json              # import map, tareas, exports
 ├── mod.ts                 # barrel raíz con espacios de nombres
-├── encrypt/               # criptografía (Web Crypto) + cloud KMS
+├── encrypt/               # criptografía (Web Crypto) + cloud KMS + PKCS#11
 │   ├── common/{enums,kms}.ts
 │   ├── models/models.ts
 │   ├── utilities/utilities.ts
@@ -642,6 +725,7 @@ forge-deno/
 │   ├── aws-kms/{interface,repository,mod}.ts
 │   ├── azure-key-vault/{interface,repository,mod}.ts
 │   ├── gcp-kms/{interface,repository,mod}.ts
+│   ├── pkcs11/{interface,config,uri,cryptoki,keys,session,ffi,repository,mod}.ts
 │   ├── errors.ts
 │   └── mod.ts
 ├── logger/                # logging estructurado

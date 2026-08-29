@@ -141,6 +141,9 @@ function domain(api: GoAPI): { module: string; specifiers: string[] } {
     if (path.includes("/gcp-kms/")) {
       return { module: "Google Cloud KMS", specifiers: ["./encrypt/gcp-kms"] };
     }
+    if (path.includes("/pkcs11/")) {
+      return { module: "PKCS#11 HSM", specifiers: ["./encrypt/pkcs11"] };
+    }
     return { module: "Encrypt / local crypto", specifiers: ["./encrypt"] };
   }
   if (path.includes("/logger/")) {
@@ -180,7 +183,14 @@ function wasmClassification(api: GoAPI, module: string): WasmClass {
   if (["HTTP", "gRPC", "Logger / OpenTelemetry", "Jobs", "Workers", "CLI"].includes(module)) {
     return "D";
   }
-  if (["AWS KMS", "Azure Key Vault", "Google Cloud KMS", "CLI / local crypto"].includes(module)) {
+  // The provider-backed crypto modules keep a portable half — payload framing,
+  // key derivation, the URI and DER handling — beside a half that can only run
+  // on the host: a network call for the cloud backends, `Deno.dlopen` on the
+  // vendor library for PKCS#11. That split is what class E describes.
+  if (
+    ["AWS KMS", "Azure Key Vault", "Google Cloud KMS", "PKCS#11 HSM", "CLI / local crypto"]
+      .includes(module)
+  ) {
     return "E";
   }
   if (api.portability === "host-dependent") {
@@ -200,7 +210,10 @@ function wasmLabel(value: WasmClass): string {
 }
 
 function priority(module: string, api: GoAPI): MatrixRow["priority"] {
-  if (module.includes("Security") || module.includes("crypto") || module.includes("KMS")) {
+  if (
+    module.includes("Security") || module.includes("crypto") || module.includes("KMS") ||
+    module.includes("HSM")
+  ) {
     return "critical";
   }
   if (api.classification === "Deprecated") return "low";
