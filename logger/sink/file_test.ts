@@ -295,8 +295,13 @@ async function withTempDirAsync(run: (dir: string) => Promise<void>): Promise<vo
 
 async function waitForGzip(dir: string): Promise<string> {
   for (let attempt = 0; attempt < 100; attempt++) {
-    const gzip = backups(dir).find((name) => name.endsWith(".gz"));
-    if (gzip) return gzip;
+    const names = backups(dir);
+    const gzip = names.find((name) => name.endsWith(".gz"));
+    // The sink renames the gzip into place first and removes the plain backup
+    // right after, so the gzip appearing does not mean compression is done.
+    // Waiting for the plain backup to be gone is what makes this deterministic
+    // on a loaded machine.
+    if (gzip && !names.includes(gzip.slice(0, -3))) return gzip;
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   throw new Error("gzip backup was not created");
