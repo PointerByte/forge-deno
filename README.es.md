@@ -389,9 +389,19 @@ const auth = jwtMiddleware(jwt); // responde 401 si falta un Bearer válido
 **Jobs por intervalo/cron** en proceso y un **bucle de workers acotado**, más un flag compartido de
 modo test que suprime el trabajo en segundo plano durante los tests.
 
-`resetWorkers()` vacía las tareas en cola y restablece el límite configurado. Las tareas que ya
-están en ejecución pueden terminar y siguen consumiendo capacidad, de modo que reiniciar
-inmediatamente después del reset no puede superar el nuevo límite de concurrencia.
+`resetWorkers()` vacía las tareas en cola y restablece el límite y el modo de despacho por defecto.
+Las tareas que ya están en ejecución pueden terminar y siguen consumiendo capacidad, de modo que
+reiniciar inmediatamente después del reset no puede superar el nuevo límite de concurrencia.
+
+El límite por defecto es una ranura de ejecución por CPU (`navigator.hardwareConcurrency`, el
+análogo en Deno del `runtime.NumCPU()` de forge-go). `setWorkersLimit()` aplica su argumento tal
+cual —ya no recurre a ese valor por defecto—, así que un límite no positivo deja al bucle sin
+ninguna ranura de ejecución y las tareas permanecen en cola hasta que se configure un límite
+positivo.
+
+`setParallelism(false)` cambia el bucle a despacho secuencial: una tarea a la vez, en orden de cola,
+y la siguiente nunca empieza antes de que termine la actual, por alto que sea el límite.
+`setParallelism(true)` es el modo por defecto y arranca hasta `limit` tareas en paralelo.
 
 El timeout de un job informa que se venció el plazo, pero no puede detener por la fuerza trabajo
 JavaScript arbitrario. Por eso el scheduler conserva la marca de ejecución hasta que la promesa

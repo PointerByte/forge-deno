@@ -23,6 +23,7 @@ import {
   matchesTrigger,
   resetWorkers,
   runWorkers,
+  setParallelism,
   setWorkersLimit,
 } from "../tools/mod.ts";
 import { newHttpServer } from "../config/http/mod.ts";
@@ -107,13 +108,20 @@ Deno.bench("tools/jobs: exact cron trigger match", () => {
   if (matchedTriggers === Number.MAX_SAFE_INTEGER) matchedTriggers = 0;
 });
 
-Deno.bench("tools/workers: dispatch one bounded task", async () => {
-  resetWorkers();
-  setWorkersLimit(1);
-  runWorkers();
-  await new Promise<void>((resolve) => addTask(resolve));
-  resetWorkers();
-});
+// Both dispatch modes are measured: sequential dispatch runs the task in the
+// pump itself, parallel dispatch hands it to its own microtask chain.
+for (
+  const mode of [{ name: "parallel", parallel: true }, { name: "sequential", parallel: false }]
+) {
+  Deno.bench(`tools/workers: dispatch one bounded task (${mode.name})`, async () => {
+    resetWorkers();
+    setWorkersLimit(1);
+    setParallelism(mode.parallel);
+    runWorkers();
+    await new Promise<void>((resolve) => addTask(resolve));
+    resetWorkers();
+  });
+}
 
 const httpServer = newHttpServer({ healthPath: "" });
 httpServer.get("/bench/:id", (request) => {

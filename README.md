@@ -379,9 +379,18 @@ const auth = jwtMiddleware(jwt); // 401s unless a valid Bearer token is present
 In-process **interval/cron jobs** and a **bounded worker loop**, plus a shared test-mode flag that
 suppresses background work during tests.
 
-`resetWorkers()` drains queued tasks and resets the configured limit. Tasks already in flight are
-allowed to finish and continue to consume capacity, so a reset followed by an immediate restart
-cannot exceed the new concurrency limit.
+`resetWorkers()` drains queued tasks and restores the default limit and dispatch mode. Tasks already
+in flight are allowed to finish and continue to consume capacity, so a reset followed by an
+immediate restart cannot exceed the new concurrency limit.
+
+The default limit is one execution slot per CPU (`navigator.hardwareConcurrency`, the Deno analogue
+of forge-go's `runtime.NumCPU()`). `setWorkersLimit()` applies its argument verbatim — there is no
+fallback to that default — so a non-positive limit leaves the loop without an execution slot and
+tasks stay queued until a positive limit is configured.
+
+`setParallelism(false)` switches the loop to sequential dispatch: one task at a time, in queue
+order, and the next task never starts before the current one settles — regardless of how high the
+limit is. `setParallelism(true)` is the default and starts up to `limit` tasks concurrently.
 
 A job timeout reports the missed deadline but cannot forcibly stop arbitrary JavaScript work. The
 scheduler therefore keeps that job's running guard until the underlying promise settles; later ticks
