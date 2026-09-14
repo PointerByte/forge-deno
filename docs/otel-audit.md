@@ -1,41 +1,29 @@
 # OpenTelemetry Audit — forge-deno
 
-Date: 2026-08-22 Runtime used for the audit: `deno 2.9.5 (stable, x86_64-unknown-linux-gnu)`, V8
+Date: 2026-09-14 Runtime used for the audit: `deno 2.9.6 (stable, x86_64-unknown-linux-gnu)`, V8
 15.0.245.2, TypeScript 6.0.3. Baseline commit: `2e6ce72`. Method: read of the actual current source,
 plus empirical probes of the Deno runtime against a stock `otel/opentelemetry-collector:0.159.0`.
 
-## 1. Current OpenTelemetry capability: none
+## 1. Current OpenTelemetry capability: native runtime integration
 
-There is **no** OpenTelemetry implementation in this repository.
+The repository now exposes `./telemetry`, backed by the official `npm:@opentelemetry/api` package.
+Deno owns the SDK and exporters when `OTEL_DENO=true`; no competing `@opentelemetry/sdk-*` bundle is
+installed.
 
-- No `@opentelemetry/*` entry in `deno.json` `imports`, none in `deno.lock`.
-- No tracer, meter, logger provider, exporter, resource, or sampler anywhere.
-- No `telemetry` export in `deno.json`.
-- `tools/wasm/component/compatibility_matrix.ts` labels the `./logger` module "Logger /
-  OpenTelemetry", which overstates what exists.
-- `docs/architecture.md` mentions OpenTelemetry only to classify it as a _host adapter_ that must
-  stay outside the portable core.
+Signal-by-signal: traces **HTTP auto-instrumentation plus Forge spans**, metrics **Deno runtime/HTTP
+metrics plus public Forge meters**, logs **console-backed OTLP records with structured trace and
+span IDs**, propagation **W3C Trace Context and Baggage**, HTTP route enrichment **yes**, gRPC unary
+instrumentation **yes**, resource/exporter configuration **standard OTEL** variables_*, shutdown
+**graceful request/RPC drain without force flush**.
 
-The only tracing-adjacent code is `config/server/http/context.ts`, which hand-implements W3C
-`traceparent`/`tracestate`:
-
-- `isValidTraceparent` / `isValidTracestate` — format validation;
-- `newTraceparent()` — generates a random trace id + span id when the incoming request has none;
-- `RequestContext` exposes `traceparent`, `traceId`, `spanId`, `traceFlags`.
-
-This is correlation plumbing, not OpenTelemetry: the ids are never attached to a span, never
-sampled, and never exported. Because it _mints_ a `traceparent` when none arrives, a downstream
-service receives a trace id that no exporter has ever seen.
-
-Signal-by-signal, before this change: traces **none**, metrics **none**, logs **none** (OTLP; the
-structured logger itself works and writes to `console.log`/file), propagation **partial**
-(hand-rolled W3C header handling, no baggage), HTTP instrumentation **none**, gRPC instrumentation
-**none**, resource attributes **none**, semantic conventions **none**, exporter configuration
-**none**, shutdown **n/a**, OTel tests **none**.
+`httpContext()` now preserves the ambient Deno server span and only falls back to its legacy
+synthetic correlation value when no OpenTelemetry span exists. The HTTP router updates the ambient
+span with `http.route`; the gRPC adapters extract/inject W3C metadata and create SERVER/CLIENT
+spans.
 
 ## 2. Runtime capability survey (measured, not assumed)
 
-Deno 2.9.5 ships OpenTelemetry support in the runtime. Findings:
+Deno 2.9.6 ships OpenTelemetry support in the runtime. Findings:
 
 - `Deno.telemetry` is available **without any `--unstable-*` flag**; there is no longer an
   `--unstable-otel` flag. It exposes three singletons documented as implementing the OpenTelemetry

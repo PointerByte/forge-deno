@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { assert, assertEquals, assertThrows } from "@std/assert";
+import { context, type Span, trace } from "@opentelemetry/api";
 import { levelName, LogLevel, parseLevel } from "./common/enums.ts";
 import { formatTimestamp, newFormatter } from "./formatter/format.ts";
 import type { LogFormat } from "./formatter/models.ts";
@@ -10,6 +11,7 @@ import { disableModeTest, enableModeTest, initLogger, type Logger } from "./buil
 import { httpLogger } from "./middlewares/http.ts";
 import { grpcLogger } from "./middlewares/grpc.ts";
 import { writeWrappedLog } from "./testdata/logging.ts";
+import { activeSpan } from "../telemetry/mod.ts";
 
 // --- enums ------------------------------------------------------------------
 
@@ -565,6 +567,34 @@ Deno.test("grpcLogger logs unary success and error", async () => {
   const err = JSON.parse(lines[1]);
   assertEquals(err.message, "grpc.request.error");
   assertEquals(err.details.error, "x");
+});
+
+Deno.test("logger adds active OpenTelemetry trace and span ids", () => {
+  const lines: string[] = [];
+  const log = initLogger({ formatter: "json", sink: (line) => lines.push(line) });
+  const span = {
+    spanContext: () => ({
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      spanId: "00f067aa0ba902b7",
+      traceFlags: 1,
+      isRemote: false,
+    }),
+  } as unknown as Span;
+
+  const active = context.with(trace.setSpan(context.active(), span), () => {
+    const current = activeSpan();
+    log.info("inside.span");
+    return current;
+  });
+
+  const record = JSON.parse(lines[0]);
+  if (active) {
+    assertEquals(record.traceID, "4bf92f3577b34da6a3ce929d0e0e4736");
+    assertEquals(record.spanID, "00f067aa0ba902b7");
+  } else {
+    assertEquals(record.traceID, "");
+    assertEquals(record.spanID, undefined);
+  }
 });
 
 function withSensibleKeysEnv<T>(value: string | undefined, run: () => T): T {

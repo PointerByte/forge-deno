@@ -26,6 +26,12 @@
 
 // Dependency-free contracts (config/grpc)
 export {
+  /** Creates SERVER spans and propagates W3C context for unary RPCs. */
+  grpcTelemetry,
+} from "../../telemetry/grpc.ts";
+export type { GrpcMetadataCarrier } from "../../telemetry/grpc.ts";
+
+export {
   /** Per-call context handed to unary handlers and interceptors. */
   type GrpcContext,
   /** RPC failure carrying a standard gRPC status code. */
@@ -80,6 +86,8 @@ export {
   type CallOptions,
   /** Promisified gRPC client wrapper for a generated service. */
   GrpcClient,
+  /** Client-level options for built-in OpenTelemetry instrumentation. */
+  type GrpcClientOptions,
   /** Creates a promisified gRPC client wrapper. */
   newGrpcClient,
 } from "../client/grpc/client.ts";

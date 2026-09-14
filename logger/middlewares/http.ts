@@ -12,6 +12,7 @@
  */
 
 import { getRequestContext } from "../../security/middlewares/context.ts";
+import { activeSpanContext } from "../../telemetry/mod.ts";
 import type { Logger } from "../builder/builder.ts";
 import { normalizeLatency, normalizeProcessLatency } from "../formatter/latency.ts";
 import type { Process } from "../formatter/models.ts";
@@ -91,7 +92,11 @@ export function buildHttpLogEntry(
   }
 
   const idHeader = options.requestIdHeader ?? "x-trace-id";
-  const traceID = request.headers.get(idHeader) ?? context?.requestId;
+  const spanContext = activeSpanContext();
+  // A real W3C trace id is more useful than the legacy request-id fallback
+  // when a request is running inside an OpenTelemetry span.
+  const traceID = spanContext?.traceId ?? request.headers.get(idHeader) ?? context?.requestId;
+  const spanID = spanContext?.spanId;
   const startedAt = options.startedAt ?? context?.startedAt;
   const latency = startedAt === undefined ? 0 : normalizeLatency(performance.now() - startedAt);
   const process = options.process ?? context?.process;
@@ -102,6 +107,7 @@ export function buildHttpLogEntry(
     ...(options.includeHeaders === false ? {} : { headers: request.headers }),
     latency,
     ...(traceID ? { traceID } : {}),
+    ...(spanID ? { spanID } : {}),
     ...(process?.length ? { process: process.map((item) => normalizeProcessLatency(item)) } : {}),
   };
 

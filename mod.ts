@@ -17,6 +17,7 @@
  * | {@link security} | `@pointerbyte/denoforge/security`|
  * | {@link tools}    | `@pointerbyte/denoforge/tools`   |
  * | {@link config}   | `@pointerbyte/denoforge/config`  |
+ * | {@link telemetry}| `@pointerbyte/denoforge/telemetry`|
  * | {@link wasm}     | `@pointerbyte/denoforge/wasm`    |
  *
  * Prefer the per-module specifiers for smaller dependency graphs; this root
@@ -39,4 +40,5 @@ export * as logger from "./logger/mod.ts";
 export * as security from "./security/mod.ts";
 export * as tools from "./tools/mod.ts";
 export * as config from "./config/mod.ts";
+export * as telemetry from "./telemetry/mod.ts";
 export * as wasm from "./wasm/mod.ts";

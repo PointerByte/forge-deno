@@ -43,6 +43,8 @@ export {
 export {
   type CallOptions,
   GrpcClient,
+  /** Client-level options for built-in OpenTelemetry instrumentation. */
+  type GrpcClientOptions,
   /** Per-call context handed to unary handlers and interceptors. */
   type GrpcContext,
   GrpcError,
@@ -56,6 +58,8 @@ export {
   type GrpcServerOptions,
   type GrpcStatus,
   type GrpcStatusCodes,
+  /** Creates SERVER spans and propagates W3C context for unary RPCs. */
+  grpcTelemetry,
   loadProto,
   type LoadProtoOptions,
   newGrpcClient,

@@ -24,9 +24,12 @@ capability lives in its own module that you can import independently.
 | `config`                  | `@pointerbyte/denoforge/config`                  | `fetch` REST client, native `Deno.serve` HTTP server, gRPC client/server |
 | `config/http`             | `@pointerbyte/denoforge/config/http`             | focused HTTP client/server entry with no optional gRPC runtime           |
 | `config/grpc`             | `@pointerbyte/denoforge/config/grpc`             | focused gRPC client/server, proto loader and interceptor contracts       |
+| `telemetry`               | `@pointerbyte/denoforge/telemetry`               | OpenTelemetry API, trace context, meters and instrumented transports     |
 | `wasm`                    | `@pointerbyte/denoforge/wasm`                    | verified forge-go component ABI, bounded host pool and native adapters   |
 
 ## Guides
+
+[OpenTelemetry](./docs/otel.md) — OTLP setup, trace/log correlation and HTTP/gRPC instrumentation.
 
 | Guide                                        | Covers                                                                  |
 | -------------------------------------------- | ----------------------------------------------------------------------- |

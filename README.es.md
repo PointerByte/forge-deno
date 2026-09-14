@@ -26,9 +26,13 @@ independiente.
 | `config`                  | `@pointerbyte/denoforge/config`                  | cliente REST `fetch`, servidor HTTP nativo `Deno.serve`, cliente/servidor gRPC |
 | `config/http`             | `@pointerbyte/denoforge/config/http`             | entrada HTTP enfocada sin runtime gRPC opcional                                |
 | `config/grpc`             | `@pointerbyte/denoforge/config/grpc`             | cliente/servidor gRPC, cargador proto y contratos de interceptores             |
+| `telemetry`               | `@pointerbyte/denoforge/telemetry`               | API OpenTelemetry, contexto de trazas, métricas y transportes instrumentados   |
 | `wasm`                    | `@pointerbyte/denoforge/wasm`                    | ABI de componente verificado, pool acotado y adaptadores nativos               |
 
 ## Guías
+
+[OpenTelemetry](./docs/otel.md) — configuración OTLP, correlación de logs/trazas e instrumentación
+HTTP/gRPC.
 
 | Guía                                                  | Cubre                                                                          |
 | ----------------------------------------------------- | ------------------------------------------------------------------------------ |

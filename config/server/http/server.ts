@@ -13,6 +13,7 @@
  */
 
 import type { Handler, Middleware } from "../../../security/middlewares/context.ts";
+import { activeSpan, setHttpRoute } from "../../../telemetry/mod.ts";
 
 export type { Handler, Middleware };
 
@@ -21,6 +22,7 @@ export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "
 
 interface Route {
   method: Method;
+  path: string;
   pattern: URLPattern;
   handler: Handler;
 }
@@ -141,7 +143,12 @@ export class HttpServer {
   /** Registers a single route, wrapping the handler with its middleware. */
   handle(method: Method, path: string, handler: Handler, ...middleware: Middleware[]): this {
     const wrapped = middleware.reduceRight<Handler>((next, mw) => mw(next), handler);
-    this.#routes.push({ method, pattern: new URLPattern({ pathname: path }), handler: wrapped });
+    this.#routes.push({
+      method,
+      path,
+      pattern: new URLPattern({ pathname: path }),
+      handler: wrapped,
+    });
     return this;
   }
 
@@ -190,7 +197,12 @@ export class HttpServer {
   async #route(req: Request): Promise<Response> {
     for (const route of this.#routes) {
       if (route.method !== req.method) continue;
-      if (route.pattern.test(req.url)) return await route.handler(req);
+      if (route.pattern.test(req.url)) {
+        // Deno already owns the HTTP SERVER span. Annotate that ambient span
+        // with the route now that Forge's router has resolved it.
+        setHttpRoute(activeSpan(), req.method, route.path);
+        return await route.handler(req);
+      }
     }
     return new Response(JSON.stringify({ error: "not found" }), {
       status: 404,

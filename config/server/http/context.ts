@@ -9,6 +9,9 @@
 
 import { type Middleware, setRequestContext } from "../../../security/middlewares/context.ts";
 import type { Process } from "../../../logger/formatter/models.ts";
+import { context as otelContext } from "@opentelemetry/api";
+import { activeSpanContext, traceparent as spanTraceparent } from "../../../telemetry/mod.ts";
+import { extractContext } from "../../../telemetry/internal.ts";
 
 export type { Process, Status } from "../../../logger/formatter/models.ts";
 
@@ -16,11 +19,11 @@ export type { Process, Status } from "../../../logger/formatter/models.ts";
 export interface HttpRequestContext {
   /** Correlation identifier read from or written to the configured header. */
   requestId: string;
-  /** Valid W3C traceparent value for the request. */
+  /** W3C traceparent value surfaced for the active request span. */
   traceparent: string;
-  /** Trace identifier parsed from `traceparent`. */
+  /** Trace identifier surfaced for the active request span. */
   traceId: string;
-  /** Parent span identifier parsed from `traceparent`. */
+  /** Span identifier surfaced for the active request span. */
   spanId: string;
   /** Trace flags parsed from `traceparent`. */
   traceFlags: string;
@@ -54,7 +57,9 @@ export interface HttpContextOptions {
 
 /**
  * Creates request context with a request id, validated W3C trace data and a
- * monotonic start time. Handlers retrieve it with `getRequestContext`.
+ * monotonic start time. When Deno has an ambient OpenTelemetry span, its
+ * context wins and handlers execute inside the same context. Handlers retrieve
+ * it with `getRequestContext`.
  */
 export function httpContext(options: HttpContextOptions = {}): Middleware {
   const requestIdHeader = options.requestIdHeader ?? "x-request-id";
@@ -63,7 +68,13 @@ export function httpContext(options: HttpContextOptions = {}): Middleware {
     const hasValidTraceparent = Boolean(
       incomingTraceparent && isValidTraceparent(incomingTraceparent),
     );
-    const traceparent = hasValidTraceparent ? incomingTraceparent! : newTraceparent();
+    const extracted = extractContext(request.headers, {
+      keys: (headers) => [...headers.keys()],
+      get: (headers, key) => headers.get(key) ?? undefined,
+    });
+    const ambientTraceparent = spanTraceparent(activeSpanContext());
+    const traceparent = ambientTraceparent ??
+      (hasValidTraceparent ? incomingTraceparent! : newTraceparent());
     const [, traceId, spanId, traceFlags] = traceparent.split("-");
     const incomingTracestate = request.headers.get("tracestate");
     const suppliedRequestId = request.headers.get(requestIdHeader)?.trim();
@@ -91,7 +102,11 @@ export function httpContext(options: HttpContextOptions = {}): Middleware {
     };
     setRequestContext(request, context);
 
-    const response = await next(request);
+    // Deno's Deno.serve instrumentation already activates the SERVER span.
+    // Only use extracted propagation when the handler is invoked outside that
+    // instrumentation (for example in a unit test or a custom host adapter).
+    const executionContext = ambientTraceparent ? otelContext.active() : extracted;
+    const response = await otelContext.with(executionContext, () => next(request));
     return setResponseHeader(response, requestIdHeader, requestId);
   };
 }

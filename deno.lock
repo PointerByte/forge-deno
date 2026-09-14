@@ -27,6 +27,8 @@
     "npm:@google-cloud/kms@^5.7.0": "5.7.0",
     "npm:@grpc/grpc-js@^1.14.4": "1.14.4",
     "npm:@grpc/proto-loader@~0.8.1": "0.8.1",
+    "npm:@opentelemetry/api@1.9.0": "1.9.0",
+    "npm:@opentelemetry/api@^1.9.0": "1.9.0",
     "npm:@peculiar/x509@^1.14.3": "1.14.3",
     "npm:protobufjs@7.6.5": "7.6.5"
   },
@@ -576,6 +578,9 @@
         "@nodelib/fs.scandir",
         "fastq"
       ]
+    },
+    "@opentelemetry/api@1.9.0": {
+      "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg=="
     },
     "@peculiar/asn1-cms@2.8.0": {
       "integrity": "sha512-NgekZOrSJFSBFLFoLfwePguAWAx7z1+f2TEsWFUMyiqqfntZ4+S/S5hzqME3q4pCA0iOsFKdwiQ35dwY24eVqA==",
@@ -1519,6 +1524,7 @@
       "npm:@google-cloud/kms@^5.7.0",
       "npm:@grpc/grpc-js@^1.14.4",
       "npm:@grpc/proto-loader@~0.8.1",
+      "npm:@opentelemetry/api@^1.9.0",
       "npm:@peculiar/x509@^1.14.3",
       "npm:protobufjs@7.6.5"
     ]

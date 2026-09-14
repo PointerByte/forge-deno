@@ -16,6 +16,7 @@
     "./config": "./config/mod.ts",
     "./config/http": "./config/http/mod.ts",
     "./config/grpc": "./config/grpc/mod.ts",
+    "./telemetry": "./telemetry/mod.ts",
     "./qdeno": "./cmd/qdeno/main.ts",
     "./wasm": "./wasm/mod.ts"
   },
@@ -56,6 +57,7 @@
     "@preview2/io": "npm:@bytecodealliance/preview2-shim@0.19.0/io",
     "@preview2/random": "npm:@bytecodealliance/preview2-shim@0.19.0/random",
     "@noble/hashes": "jsr:@noble/hashes@^1.8.0",
+    "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.0",
     "@aws-sdk/client-kms": "npm:@aws-sdk/client-kms@^3.1100.0",
     "@azure/keyvault-keys": "npm:@azure/keyvault-keys@^4.10.2",
     "@grpc/grpc-js": "npm:@grpc/grpc-js@^1.14.4",

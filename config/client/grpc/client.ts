@@ -28,6 +28,13 @@
  */
 
 import grpc from "@grpc/grpc-js";
+import { withGrpcClientSpan } from "../../../telemetry/grpc.ts";
+
+/** Options controlling built-in client instrumentation. */
+export interface GrpcClientOptions {
+  /** Enables the built-in OpenTelemetry CLIENT instrumentation. Defaults to true. */
+  telemetry?: boolean;
+}
 
 /** Per-call options. */
 export interface CallOptions {
@@ -37,6 +44,8 @@ export interface CallOptions {
   bearer?: string;
   /** Deadline in milliseconds from now. */
   deadlineMs?: number;
+  /** Overrides client-level OpenTelemetry instrumentation for this call. */
+  telemetry?: boolean;
 }
 
 type UnaryFn = (
@@ -49,15 +58,20 @@ type UnaryFn = (
 /** Promisified gRPC client for a single service. */
 export class GrpcClient {
   readonly #client: grpc.Client;
+  readonly #target: string;
+  readonly #telemetry: boolean;
 
   /** Creates a promisified wrapper around a generated grpc-js service client. */
   constructor(
     ServiceClient: grpc.ServiceClientConstructor,
     address: string,
     credentials?: grpc.ChannelCredentials,
+    options: GrpcClientOptions = {},
   ) {
     const creds = credentials ?? grpc.credentials.createInsecure();
     this.#client = new ServiceClient(address, creds);
+    this.#target = address;
+    this.#telemetry = options.telemetry ?? true;
   }
 
   /** Invokes a unary method and resolves with the typed response. */
@@ -76,12 +90,17 @@ export class GrpcClient {
       callOptions.deadline = new Date(Date.now() + options.deadlineMs);
     }
 
-    return new Promise<Res>((resolve, reject) => {
-      fn.call(this.#client, request, metadata, callOptions, (err, value) => {
-        if (err) return reject(err);
-        resolve(value as Res);
+    const invoke = () =>
+      new Promise<Res>((resolve, reject) => {
+        fn.call(this.#client, request, metadata, callOptions, (err, value) => {
+          if (err) return reject(err);
+          resolve(value as Res);
+        });
       });
-    });
+    if (options.telemetry === false || (options.telemetry === undefined && !this.#telemetry)) {
+      return invoke();
+    }
+    return withGrpcClientSpan(method, this.#target, metadata, invoke);
   }
 
   /** Closes the underlying channel. */
@@ -100,6 +119,7 @@ export function newGrpcClient(
   ServiceClient: grpc.ServiceClientConstructor,
   address: string,
   credentials?: grpc.ChannelCredentials,
+  options?: GrpcClientOptions,
 ): GrpcClient {
-  return new GrpcClient(ServiceClient, address, credentials);
+  return new GrpcClient(ServiceClient, address, credentials, options);
 }

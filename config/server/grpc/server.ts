@@ -28,12 +28,15 @@
  */
 
 import grpc from "@grpc/grpc-js";
+import { grpcTelemetry } from "../../../telemetry/grpc.ts";
 import { type ServerInterceptor, unary, type UnaryHandler } from "./interceptors.ts";
 
 /** Options for {@link GrpcServer}. */
 export interface GrpcServerOptions {
   /** Interceptors applied to every registered method, outermost-first. */
   interceptors?: ServerInterceptor[];
+  /** Enables the built-in OpenTelemetry SERVER interceptor. Defaults to true. */
+  telemetry?: boolean;
 }
 
 /** A map of method name -> unary handler for a single service. */
@@ -47,7 +50,10 @@ export class GrpcServer {
   /** Creates a gRPC server with an optional global interceptor chain. */
   constructor(options: GrpcServerOptions = {}) {
     this.#server = new grpc.Server();
-    this.#interceptors = options.interceptors ?? [];
+    this.#interceptors = [
+      ...(options.telemetry === false ? [] : [grpcTelemetry()]),
+      ...(options.interceptors ?? []),
+    ];
   }
 
   /**

@@ -25,6 +25,7 @@ import { normalizeLatency, normalizeProcessLatency } from "../formatter/latency.
 import type { Details, LogFormat, Process } from "../formatter/models.ts";
 import { newSanitizer, type Sanitizer } from "../sanitizer/sanitizer.ts";
 import { newFileSink, type RotateOptions } from "../sink/file.ts";
+import { activeSpanContext } from "../../telemetry/mod.ts";
 
 /** Destination for a formatted log line. */
 export type Sink = (line: string) => void;
@@ -90,7 +91,7 @@ export function disableModeTest(): void {
 }
 
 /** Attribute keys lifted to the top level of the entry. */
-const TOP_LEVEL_ATTRS = ["traceID", "latency", "services", "process"] as const;
+const TOP_LEVEL_ATTRS = ["traceID", "spanID", "latency", "services", "process"] as const;
 const DEFAULT_CALLER_SKIP_FILES = new Set(["logging.ts"]);
 /** Attribute keys mapped onto their canonical `details` slot. */
 const DETAIL_ATTRS = [
@@ -180,6 +181,7 @@ export class Logger {
     attrs: Record<string, unknown>,
     caller: { method: string; line: number },
   ): LogFormat {
+    const spanContext = activeSpanContext();
     const details: Record<string, unknown> = {
       system: typeof attrs.system === "string" && attrs.system ? attrs.system : this.#system,
     };
@@ -197,7 +199,12 @@ export class Logger {
     return {
       level: levelName(level),
       timestamp: formatTimestamp(new Date(), this.#formatDate),
-      traceID: typeof attrs.traceID === "string" ? attrs.traceID : "",
+      traceID: typeof attrs.traceID === "string" ? attrs.traceID : spanContext?.traceId ?? "",
+      ...(typeof attrs.spanID === "string"
+        ? (attrs.spanID ? { spanID: attrs.spanID } : {})
+        : spanContext?.spanId
+        ? { spanID: spanContext.spanId }
+        : {}),
       message,
       details: details as Details,
       process: Array.isArray(services) ? (services as Process[]).map(normalizeProcessLatency) : [],
