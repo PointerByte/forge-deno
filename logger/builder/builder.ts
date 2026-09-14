@@ -5,8 +5,8 @@
  * Structured logger and its public builder API.
  *
  * Every log call is rendered as a GoForge-compatible {@link LogFormat} entry
- * (`{level, timestamp, traceID, message, details, process, method, line,
- * latency}`) and written to a pluggable {@link Sink} (the console by default).
+ * (`{level, timestamp, traceID, spanID, message, details, process, method,
+ * line, latency}`) and written to a pluggable {@link Sink} (the console by default).
  * The output layout is selected with the `formatter` option exactly like
  * GoForge's `logger.formatter` key: `"json"`, `"text"`/`"txt"`/`""` (default)
  * or a custom template.

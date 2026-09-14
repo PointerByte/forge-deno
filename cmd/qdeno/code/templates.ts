@@ -11,7 +11,7 @@
 /** Service kinds the scaffolder can generate. */
 export type ServiceKind = "http" | "grpc";
 
-const FRAMEWORK = "@pointerbyte/denoforge";
+const FRAMEWORK = "@pointerbyte/forge-deno";
 
 function denoJson(name: string): string {
   return JSON.stringify(

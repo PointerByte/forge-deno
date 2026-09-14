@@ -39,7 +39,7 @@ const baseLog: LogFormat = {
 const goJSONGolden = '{"timestamp":"2026-03-13T01:10:23.123",' +
   '"traceID":"8f3a5d9c-9f2a-4e1d-b3a7-7f23d9a1e4aa","level":"",' +
   '"message":"Request processed successfully","details":{"system":""},' +
-  '"process":[],"method":"ProcessPayment","line":142,"latency":155}';
+  '"method":"ProcessPayment","line":142,"latency":155}';
 
 Deno.test("json format matches the GoForge golden entry", () => {
   const out = newFormatter("json").format(baseLog);
@@ -51,13 +51,39 @@ Deno.test("json format matches the GoForge golden entry", () => {
     "traceID",
     "message",
     "details",
-    "process",
     "method",
     "line",
     "latency",
   ]);
   // Trimming and casing behave like Go's dispatch.
   assertEquals(newFormatter("  json  ").format(baseLog), out);
+});
+
+Deno.test("json format emits spanID and process only when present, in GoForge order", () => {
+  const withSpan: LogFormat = {
+    ...baseLog,
+    spanID: "00f067aa0ba902b7",
+    process: [{ system: "auth", process: "validate", status: "SUCCESS", latency: 3 }],
+  };
+  assertEquals(Object.keys(JSON.parse(newFormatter("json").format(withSpan))), [
+    "level",
+    "timestamp",
+    "traceID",
+    "spanID",
+    "message",
+    "details",
+    "process",
+    "method",
+    "line",
+    "latency",
+  ]);
+  // An empty spanID is omitted like Go's `omitempty`.
+  const noSpan = JSON.parse(newFormatter("json").format({ ...baseLog, spanID: "" }));
+  assert(!("spanID" in noSpan));
+  // A JSON-shaped custom template is re-normalized and keeps spanID.
+  const tpl = newFormatter('{"traceID":{{json .TraceID}},"spanID":{{json .SpanID}}}');
+  assertEquals(JSON.parse(tpl.format(withSpan)).spanID, "00f067aa0ba902b7");
+  assert(!("spanID" in JSON.parse(tpl.format(baseLog))));
 });
 
 Deno.test("text format matches the GoForge golden line", () => {
@@ -206,7 +232,6 @@ Deno.test("custom template cannot rename JSON keys (GoForge quirk)", () => {
     traceID: "",
     message: "",
     details: { system: "" },
-    process: [],
     method: "",
     line: 0,
     latency: 0,
@@ -394,7 +419,6 @@ Deno.test("json formatter emits the GoForge entry schema", () => {
     "traceID",
     "message",
     "details",
-    "process",
     "method",
     "line",
     "latency",
@@ -407,7 +431,7 @@ Deno.test("json formatter emits the GoForge entry schema", () => {
   assertEquals(rec.details.method, "GET");
   assertEquals(rec.details.path, "/api/users");
   assertEquals(rec.details.userId, 42); // unrecognized attrs merge into details
-  assertEquals(rec.process, []);
+  assert(!("process" in rec)); // an empty process is omitted, like Go's `omitempty`
   assert(rec.method.length > 0);
   assert(rec.line > 0);
   assert(!("version" in rec.details)); // app version is not part of log lines

@@ -175,16 +175,19 @@ function detailExtras(d: Details): Array<[string, unknown]> {
 
 /**
  * Serializes an entry with the exact key order and omit-empty semantics of
- * GoForge's `json.Marshal(LogFormat)`.
+ * GoForge's `json.Marshal(LogFormat)`: `spanID` and `process` are omitted when
+ * empty.
  */
 function marshalEntry(log: LogFormat): string {
+  const process = log.process ?? [];
   return JSON.stringify({
     level: log.level ?? "",
     timestamp: log.timestamp ?? "",
     traceID: log.traceID ?? "",
+    ...(log.spanID ? { spanID: log.spanID } : {}),
     message: log.message ?? "",
     details: marshalDetails(log.details ?? { system: "" }),
-    process: (log.process ?? []).map(marshalProcess),
+    ...(process.length > 0 ? { process: process.map(marshalProcess) } : {}),
     method: log.method ?? "",
     line: log.line ?? 0,
     latency: normalizeLatency(log.latency),
@@ -299,6 +302,7 @@ function coerceEntry(parsed: Record<string, unknown>): LogFormat {
     level: typeof parsed.level === "string" ? parsed.level : "",
     timestamp: typeof parsed.timestamp === "string" ? parsed.timestamp : "",
     traceID: typeof parsed.traceID === "string" ? parsed.traceID : "",
+    ...(typeof parsed.spanID === "string" && parsed.spanID ? { spanID: parsed.spanID } : {}),
     message: typeof parsed.message === "string" ? parsed.message : "",
     details: details !== null && typeof details === "object" && !Array.isArray(details)
       ? details as Details

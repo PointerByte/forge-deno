@@ -19,7 +19,7 @@
  * log.info("user.login", { userId: 42, password: "hunter2" }); // password redacted
  * // {"level":"INFO","timestamp":"2026-07-05T12:00:00.000","traceID":"",
  * //  "message":"user.login","details":{"system":"api","userId":42,
- * //  "password":"[REDACTED]"},"process":[],"method":"main.ts","line":9,"latency":0}
+ * //  "password":"[REDACTED]"},"method":"main.ts","line":9,"latency":0}
  * ```
  *
  * HTTP logging can be automatic with `httpLogger(log)`, or emitted directly

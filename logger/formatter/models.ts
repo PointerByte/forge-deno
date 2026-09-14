@@ -88,11 +88,13 @@ export interface LogFormat {
   timestamp: string;
   /** Correlation trace identifier. */
   traceID: string;
+  /** Correlation span identifier; omitted from JSON output when empty. */
+  spanID?: string;
   /** Human-readable event message. */
   message: string;
   /** Request-scoped structured attributes. */
   details: Details;
-  /** Downstream calls or subprocesses. */
+  /** Downstream calls or subprocesses; omitted from JSON output when empty. */
   process: Process[];
   /** Calling function or file. */
   method: string;

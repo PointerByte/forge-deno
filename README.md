@@ -227,8 +227,9 @@ FORGE_PKCS11_MODULE=/usr/lib64/pkcs11/libsofthsm2.so FORGE_PKCS11_PIN=1234   den
 
 Leveled logging that emits the **forge-go log format**, with a sensitive-value **sanitizer** and
 HTTP/gRPC middleware. Every entry follows the forge-go schema
-`{level, timestamp, traceID, message, details, process, method, line, latency}`, where `method` and
-`line` locate the call site and `details.system` comes from `service.name`.
+`{level, timestamp, traceID, spanID, message, details, process, method, line, latency}`, where
+`method` and `line` locate the call site and `details.system` comes from `service.name`. As in
+forge-go, `spanID` and `process` are omitted from the JSON output when empty.
 
 ```ts
 import { initLogger, LogLevel } from "@pointerbyte/denoforge/logger";
@@ -259,7 +260,6 @@ The output format is selected with `formatter`, exactly like forge-go's `logger.
     "traceID": "a1b2c3d4",
     "message": "request completed",
     "details": { "system": "api", "method": "GET", "path": "/api/v1/orders" },
-    "process": [],
     "method": "handler",
     "line": 42,
     "latency": 12

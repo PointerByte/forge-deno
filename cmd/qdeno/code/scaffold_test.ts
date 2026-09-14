@@ -41,7 +41,8 @@ Deno.test("scaffold writes a project to the filesystem seam", async () => {
   const result = await scaffold({ kind: "http", name: "my-api" }, fs);
   assertEquals(result.dir, "./my-api");
   assert(files["./my-api/main.ts"].includes("newHttpServer"));
-  assert(files["./my-api/deno.json"].includes("@pointerbyte/denoforge"));
+  assert(files["./my-api/deno.json"].includes("jsr:@pointerbyte/forge-deno"));
+  assert(!files["./my-api/deno.json"].includes("@pointerbyte/denoforge"));
 });
 
 Deno.test("scaffold validates name and existing directory", async () => {
