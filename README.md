@@ -382,6 +382,10 @@ const auth = jwtMiddleware(jwt); // 401s unless a valid Bearer token is present
 In-process **interval/cron jobs** and a **bounded worker loop**, plus a shared test-mode flag that
 suppresses background work during tests.
 
+Jobs begin when `startJobs()` runs; the HTTP and gRPC server bootstraps do not call it, so your
+application must call it explicitly. When test mode is enabled (`enableModeTest()`), jobs are not
+started. Use an id when a job must be paused, resumed, or stopped individually.
+
 `resetWorkers()` drains queued tasks and restores the default limit and dispatch mode. Tasks already
 in flight are allowed to finish and continue to consume capacity, so a reset followed by an
 immediate restart cannot exceed the new concurrency limit.

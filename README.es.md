@@ -393,6 +393,11 @@ const auth = jwtMiddleware(jwt); // responde 401 si falta un Bearer válido
 **Jobs por intervalo/cron** en proceso y un **bucle de workers acotado**, más un flag compartido de
 modo test que suprime el trabajo en segundo plano durante los tests.
 
+Los jobs arrancan cuando se ejecuta `startJobs()`; los bootstraps de servidor HTTP y gRPC no lo
+llaman, así que tu aplicación debe invocarlo explícitamente. Cuando el modo test está activo
+(`enableModeTest()`), los jobs no arrancan. Usa un id cuando un job deba pausarse, reanudarse o
+detenerse individualmente.
+
 `resetWorkers()` vacía las tareas en cola y restablece el límite y el modo de despacho por defecto.
 Las tareas que ya están en ejecución pueden terminar y siguen consumiendo capacidad, de modo que
 reiniciar inmediatamente después del reset no puede superar el nuevo límite de concurrencia.
